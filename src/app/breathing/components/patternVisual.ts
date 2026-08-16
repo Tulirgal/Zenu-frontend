@@ -1,5 +1,10 @@
 /**
  * Derive a card motif from DB `steps` timing — never from technique names.
+ *
+ * - equal phases (e.g. 4·4·4·4 or 5·5) → balanced
+ * - longer final/exhale phase (e.g. 4·7·8) → longExhale
+ * - two phases unequal → wave
+ * - otherwise → generic (still rendered with proportional arcs)
  */
 export type PatternMotif = 'balanced' | 'longExhale' | 'wave' | 'generic';
 
@@ -7,8 +12,11 @@ export function derivePatternMotif(steps: number[]): PatternMotif {
   if (!steps.length) return 'generic';
   if (steps.length >= 2 && steps.every((s) => s === steps[0])) return 'balanced';
   const inhale = steps[0] ?? 0;
-  const exhale = steps[Math.min(2, steps.length - 1)] ?? 0;
-  if (exhale > inhale * 1.15) return 'longExhale';
+  // Prefer true exhale index when 3+ phases; else last phase
+  const exhaleIdx = steps.length >= 3 ? 2 : steps.length - 1;
+  const exhale = steps[exhaleIdx] ?? 0;
+  const hold = steps.length >= 2 ? steps[1] : 0;
+  if (exhale > inhale * 1.15 || hold > inhale * 1.4) return 'longExhale';
   if (steps.length === 2) return 'wave';
   return 'generic';
 }

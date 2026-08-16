@@ -1,25 +1,15 @@
 'use client';
 
-import Link from 'next/link';
 import { Panda } from '@/components/panda/Panda';
 import { cn } from '@/lib/utils';
 
+/**
+ * Content header only — ZenU sidebar / mobile bottom nav provide app chrome.
+ * No module-specific breadcrumb (keeps Breathing consistent with other modules).
+ */
 export function BreathingHeader({ className }: { className?: string }) {
   return (
     <header className={cn('relative', className)}>
-      <nav className="mb-6 font-ui text-sm text-zen-fg-muted">
-        <Link
-          href="/"
-          className="rounded-zen-sm hover:text-zen-fg focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2"
-        >
-          ZenU
-        </Link>
-        <span className="mx-2 text-zen-border" aria-hidden="true">
-          →
-        </span>
-        <span className="text-zen-fg">Breathe</span>
-      </nav>
-
       <div className="grid items-center gap-8 md:grid-cols-[1fr_auto] md:gap-10">
         <div className="min-w-0 text-center md:text-left">
           <h1
@@ -47,7 +37,7 @@ export function BreathingHeader({ className }: { className?: string }) {
             className="pointer-events-none absolute inset-0 rounded-full opacity-80"
             style={{
               background:
-                'radial-gradient(circle, hsl(var(--zen-secondary) / 0.22) 0%, hsl(var(--zen-primary) / 0.08) 45%, transparent 70%)',
+                'radial-gradient(circle, hsl(262 48% 58% / 0.22) 0%, hsl(221 70% 52% / 0.08) 45%, transparent 70%)',
             }}
             aria-hidden="true"
           />

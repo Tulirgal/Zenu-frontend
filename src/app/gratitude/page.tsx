@@ -1,127 +1,50 @@
-"use client";
+'use client';
 
-import PandaJar from '@/components/gratitude/PandaJar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Sparkles, Trash2, WandSparkles, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { trackEngagement } from '@/lib/signals';
 
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useAuth } from '@/components/providers/AuthProvider';
-import PandaAvatar from '@/components/PandaAvatar';
 import { apiClient } from '@/lib/apiClient';
-import type { GratitudeEntry, GratitudeFeedback, GratitudeOverallReview } from '@/lib/types';
+import type { GratitudeEntry, GratitudeOverallReview } from '@/lib/types';
 import {
   ZenPage,
-  ZenContainer,
-  ZenSection,
   ZenButton,
-  ZenInput,
-  ZenTextarea,
-  ZenSkeleton,
   ZenDialog,
   ZenDialogContent,
+  ZenDialogDescription,
   ZenDialogHeader,
   ZenDialogTitle,
-  ZenDialogDescription,
-  ZenDialogFooter,
+  ZenSkeleton,
 } from '@/components/zen';
-import ModulePage from '@/components/ui/ModulePage';
-import { getTheme } from '@/lib/moduleThemes';
+import { cn } from '@/lib/utils';
+import { GratitudeHeader } from './components/GratitudeHeader';
+import { GratitudeJar } from './components/GratitudeJar';
+import { MemoryReveal } from './components/MemoryReveal';
+import { AddGratitudeDialog } from './components/AddGratitudeDialog';
+import { RecentMoments } from './components/RecentMoments';
+import {
+  GratitudeCompanion,
+  type GratitudeWhisper,
+} from './components/GratitudeCompanion';
+import { pickLocalRandom } from './components/gratitudeUtils';
 
-const EntryComposer = ({
-  open,
-  onOpenChange,
-  onSubmit,
-  submitting,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (input: { title: string; content: string }) => Promise<void>;
-  submitting: boolean;
-}) => {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-
-  const handleClose = (nextOpen: boolean) => {
-    if (!nextOpen) {
-      setTitle('');
-      setContent('');
-    }
-    onOpenChange(nextOpen);
-  };
-
-  const handleSave = async () => {
-    if (!content.trim()) {
-      toast.error('Write a few lines before saving your gratitude note.');
-      return;
-    }
-    await onSubmit({ title, content });
-    setTitle('');
-    setContent('');
-  };
-
-  return (
-    <ZenDialog open={open} onOpenChange={handleClose}>
-      <ZenDialogContent className="sm:max-w-xl">
-        <ZenDialogHeader>
-          <ZenDialogTitle className="font-serif">Add a gratitude note</ZenDialogTitle>
-          <ZenDialogDescription>
-            Write what happened today and why you feel thankful for it.
-          </ZenDialogDescription>
-        </ZenDialogHeader>
-
-        <div className="space-y-4 my-2">
-          <ZenInput
-            label="Short title (optional)"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="A tiny win from today"
-            maxLength={120}
-          />
-          <ZenTextarea
-            label="Your gratitude note"
-            value={content}
-            onChange={(event) => setContent(event.target.value)}
-            placeholder="Today I felt thankful because…"
-            maxLength={5000}
-            rows={8}
-            className="font-serif"
-          />
-        </div>
-
-        <ZenDialogFooter>
-          <ZenButton variant="outline" onClick={() => handleClose(false)} disabled={submitting}>
-            Cancel
-          </ZenButton>
-          <ZenButton variant="accent" onClick={() => void handleSave()} loading={submitting}>
-            Save to jar
-          </ZenButton>
-        </ZenDialogFooter>
-      </ZenDialogContent>
-    </ZenDialog>
-  );
-};
-
-const GratitudePageInner = () => {
+function GratitudePageInner() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<GratitudeEntry[]>([]);
   const [composerOpen, setComposerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [picking, setPicking] = useState(false);
+  const [jarActive, setJarActive] = useState(false);
   const [reviewing, setReviewing] = useState(false);
-  const [selectedFeedback, setSelectedFeedback] = useState<GratitudeFeedback | null>(null);
+  const [revealed, setRevealed] = useState<GratitudeEntry | null>(null);
+  const [whisperLine, setWhisperLine] = useState<string | null>(null);
   const [overallReview, setOverallReview] = useState<GratitudeOverallReview | null>(null);
-  const [pickedDialogOpen, setPickedDialogOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-  const [selectedNote, setSelectedNote] = useState<{
-    id: string;
-    content: string;
-    emoji?: string;
-  } | null>(null);
+  const [companionWhisper, setCompanionWhisper] = useState<GratitudeWhisper>(null);
+  const [whisperPulse, setWhisperPulse] = useState(0);
 
   useEffect(() => {
     trackEngagement('journal_gratitude', 'opened');
@@ -132,19 +55,14 @@ const GratitudePageInner = () => {
     };
   }, []);
 
-  const handlePickRandom = () => {
-    if (!entries?.length) return;
-    const random = entries[Math.floor(Math.random() * entries.length)];
-    setSelectedNote({ id: random.id, content: random.content });
+  const flashWhisper = (w: Exclude<GratitudeWhisper, null>) => {
+    setCompanionWhisper(w);
+    setWhisperPulse((n) => n + 1);
   };
-
-  const handleCloseNote = () => setSelectedNote(null);
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
-    setSelectedFeedback(null);
     setOverallReview(null);
-    setPickedDialogOpen(false);
     setReviewDialogOpen(false);
     try {
       const data = await apiClient.getGratitudeEntries();
@@ -171,28 +89,34 @@ const GratitudePageInner = () => {
       });
       setEntries((prev) => [created, ...prev]);
       setComposerOpen(false);
-      toast.success('Gratitude note saved in your jar.');
+      toast.success('Moment saved in your jar.');
+      flashWhisper('saved');
       await apiClient.recordActivity('gratitude', { entryId: created.id });
     } catch (error) {
       console.error('Failed to create gratitude entry', error);
-      toast.error('Could not save this gratitude note.');
+      toast.error('Could not save this gratitude moment.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleRandomPick = async () => {
+  const handlePickMemory = async () => {
     if (!entries.length) {
-      toast.message('Your jar is still empty. Add your first gratitude note.');
+      toast.message('Your jar is still empty. Add your first gratitude moment.');
+      flashWhisper('empty');
       return;
     }
+
     setPicking(true);
+    setJarActive(true);
     setOverallReview(null);
     setReviewDialogOpen(false);
+
     try {
       const result = await apiClient.getRandomGratitudeFeedback();
-      setSelectedFeedback(result);
-      setPickedDialogOpen(true);
+      setRevealed(result.entry);
+      setWhisperLine(result.feedback?.trim() ? result.feedback : null);
+      flashWhisper('found');
       await apiClient.recordActivity('gratitude', {
         action: 'random_reflection',
         entryId: result.entry.id,
@@ -200,20 +124,27 @@ const GratitudePageInner = () => {
       });
     } catch (error) {
       console.error('Failed to fetch random gratitude feedback', error);
-      toast.error('Could not pull a random reflection right now.');
+      const local = pickLocalRandom(entries);
+      if (local) {
+        setRevealed(local);
+        setWhisperLine(null);
+        flashWhisper('found');
+        toast.message('Opened a memory from your jar.');
+      } else {
+        toast.error('Could not pick a memory right now.');
+      }
     } finally {
       setPicking(false);
+      window.setTimeout(() => setJarActive(false), 1600);
     }
   };
 
   const handleOverallReview = async () => {
     if (!entries.length) {
-      toast.message('Add a few entries first to generate an overall review.');
+      toast.message('Add a few moments first to generate a quiet review.');
       return;
     }
     setReviewing(true);
-    setSelectedFeedback(null);
-    setPickedDialogOpen(false);
     try {
       const result = await apiClient.getOverallGratitudeReview();
       setOverallReview(result);
@@ -230,22 +161,23 @@ const GratitudePageInner = () => {
     }
   };
 
-  const handleDeleteEntry = async (id: string) => {
+  const handleDeleteRevealed = async () => {
+    if (!revealed?.id) return;
     try {
-      await apiClient.deleteGratitudeEntry(id);
-      setEntries((prev) => prev.filter((entry) => entry.id !== id));
-      setSelectedFeedback((prev) => (prev?.entry.id === id ? null : prev));
-      toast.success('Entry removed from your jar.');
+      await apiClient.deleteGratitudeEntry(revealed.id);
+      setEntries((prev) => prev.filter((entry) => entry.id !== revealed.id));
+      setRevealed(null);
+      setWhisperLine(null);
+      toast.success('Moment removed from your jar.');
     } catch (error) {
       console.error('Failed to delete gratitude entry', error);
-      toast.error('Could not delete this entry.');
+      toast.error('Could not delete this moment.');
     }
   };
 
-  const handleDeleteFromPickedDialog = async () => {
-    if (!selectedFeedback?.entry?.id) return;
-    await handleDeleteEntry(selectedFeedback.entry.id);
-    setPickedDialogOpen(false);
+  const closeReveal = () => {
+    setRevealed(null);
+    setWhisperLine(null);
   };
 
   const greetingName = useMemo(() => {
@@ -253,164 +185,112 @@ const GratitudePageInner = () => {
     return user.username ?? user.fullName ?? user.email?.split('@')[0] ?? 'friend';
   }, [user]);
 
-  const theme = getTheme('gratitude');
+  const hasEntries = entries.length > 0;
 
   return (
-    <ModulePage theme={theme}>
-      <ZenPage atmosphere="none" className="min-h-[calc(100dvh-4rem)]">
-        <ZenContainer maxWidth="xl" className="pt-8 pb-10 md:pt-12 relative">
-        <div className="absolute top-0 left-4 md:left-0 z-20 mt-4 md:mt-0">
-          <Link href="/" tabIndex={-1}>
-            <ZenButton variant="ghost" size="sm" className="text-zen-fg-muted hover:text-zen-fg">
-              <ArrowLeft className="h-4 w-4 mr-1.5" />
-              Back
-            </ZenButton>
-          </Link>
-        </div>
-        <ZenSection>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-5 glass rounded-zen-xl p-6 sm:p-8">
-            <PandaAvatar state="gratitude" size={72} label="Panda celebrating gratitude" />
-            <div className="min-w-0 flex-1">
-              <p className="zen-label text-zen-accent">Hello {greetingName}</p>
-              <h1 className="zen-h1 text-zen-fg font-serif mt-1">Your gratitude jar</h1>
-              <p className="zen-body-sm text-zen-fg-muted mt-2 max-w-4xl">
-                Add one thankful note at a time. Tap the jar to rediscover a moment you saved.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <ZenButton variant="accent" size="lg" onClick={() => setComposerOpen(true)}>
-                  Add gratitude note
-                </ZenButton>
-                <ZenButton
-                  variant="ghost"
-                  onClick={() => void handleRandomPick()}
-                  loading={picking}
-                  disabled={!entries.length}
-                >
-                  Pick a paper
-                </ZenButton>
-                <ZenButton
-                  variant="outline"
-                  onClick={() => void handleOverallReview()}
-                  loading={reviewing}
-                  disabled={!entries.length}
-                >
-                  Jar review
-                </ZenButton>
-              </div>
-            </div>
-          </div>
-        </ZenSection>
+    <ZenPage
+      atmosphere="home"
+      className={cn(
+        'relative min-h-dvh overflow-x-hidden',
+        'bg-[hsl(38,40%,99%)]',
+        'pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-16',
+        'pt-6 md:pt-10',
+      )}
+    >
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 900px 480px at 12% 0%, hsl(32 55% 78% / 0.22), transparent 58%), radial-gradient(ellipse 720px 420px at 92% 18%, hsl(28 45% 88% / 0.35), transparent 55%), radial-gradient(ellipse 600px 360px at 50% 100%, hsl(40 40% 92% / 0.4), transparent 60%)',
+          }}
+        />
+      </div>
 
-        <ZenSection>
+      <div className="relative z-10 mx-auto w-full max-w-[1200px] space-y-10 px-4 sm:px-6 md:space-y-12 lg:px-8">
+        <GratitudeHeader
+          greetingName={greetingName}
+          onAdd={() => setComposerOpen(true)}
+          onPick={() => void handlePickMemory()}
+          picking={picking}
+          canPick={hasEntries && !loading}
+        />
+
+        <section className="flex flex-col items-center gap-8">
           {loading ? (
-            <ZenSkeleton className="h-80 w-full" rounded="2xl" />
+            <ZenSkeleton className="h-72 w-full max-w-sm" rounded="2xl" />
           ) : (
-            <div className="rounded-zen-2xl bg-zen-accent-soft/60 border border-zen-accent/15 p-6 shadow-zen-subtle">
-              <PandaJar
-                notes={entries.map((e) => ({ id: e.id, content: e.content }))}
-                onPickRandom={handlePickRandom}
-                onAddNew={() => setComposerOpen(true)}
-                selectedNote={selectedNote}
-                onCloseNote={handleCloseNote}
-              />
-            </div>
+            <GratitudeJar entryCount={entries.length} active={jarActive || Boolean(revealed)} />
           )}
-        </ZenSection>
-      </ZenContainer>
 
-      <EntryComposer
+          <MemoryReveal
+            entry={revealed}
+            whisper={whisperLine}
+            onClose={closeReveal}
+            onDelete={() => void handleDeleteRevealed()}
+          />
+
+          {hasEntries ? (
+            <GratitudeCompanion
+              key={whisperPulse}
+              whisper={companionWhisper}
+              visible
+            />
+          ) : null}
+        </section>
+
+        <RecentMoments
+          entries={entries}
+          loading={loading}
+          onAdd={() => setComposerOpen(true)}
+          onOpen={(entry) => {
+            setRevealed(entry);
+            setWhisperLine(null);
+          }}
+          onReview={() => void handleOverallReview()}
+          reviewing={reviewing}
+        />
+      </div>
+
+      <AddGratitudeDialog
         open={composerOpen}
         onOpenChange={setComposerOpen}
         onSubmit={handleCreateEntry}
         submitting={submitting}
       />
 
-      <ZenDialog open={pickedDialogOpen} onOpenChange={setPickedDialogOpen}>
-        <ZenDialogContent className="sm:max-w-2xl">
-          <ZenDialogHeader>
-            <ZenDialogTitle className="flex items-center gap-2 font-serif">
-              <Sparkles className="h-5 w-5 text-zen-accent" aria-hidden="true" />
-              Picked reflection
-            </ZenDialogTitle>
-            <ZenDialogDescription>A random gratitude paper opened from your jar.</ZenDialogDescription>
-          </ZenDialogHeader>
-
-          {selectedFeedback ? (
-            <motion.div
-              key={selectedFeedback.entry.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-              className="space-y-4"
-            >
-              <div className="rounded-zen-xl border border-zen-accent/20 bg-zen-accent-soft p-4">
-                <p className="zen-caption text-zen-accent">Paper from jar</p>
-                <p className="mt-1 zen-h3 text-zen-fg font-serif">
-                  {selectedFeedback.entry.title ?? 'Untitled note'}
-                </p>
-                <p className="mt-2 whitespace-pre-wrap zen-body-sm text-zen-fg font-serif">
-                  {selectedFeedback.entry.content}
-                </p>
-              </div>
-              <div className="rounded-zen-xl border border-zen-primary/20 bg-zen-primary-soft p-4">
-                <p className="zen-body-sm font-medium text-zen-primary">
-                  Thankfulness score: {selectedFeedback.thankfulnessScore}/10
-                </p>
-                <p className="mt-2 whitespace-pre-wrap zen-body-sm text-zen-fg">
-                  {selectedFeedback.feedback}
-                </p>
-              </div>
-            </motion.div>
-          ) : (
-            <ZenSkeleton className="h-40 w-full" rounded="xl" />
-          )}
-
-          <ZenDialogFooter>
-            <ZenButton variant="outline" onClick={() => setPickedDialogOpen(false)}>
-              Close
-            </ZenButton>
-            <ZenButton
-              variant="destructive"
-              onClick={() => void handleDeleteFromPickedDialog()}
-              disabled={!selectedFeedback?.entry?.id}
-            >
-              <Trash2 className="h-4 w-4" aria-hidden="true" />
-              Delete note
-            </ZenButton>
-          </ZenDialogFooter>
-        </ZenDialogContent>
-      </ZenDialog>
-
       <ZenDialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
         <ZenDialogContent className="sm:max-w-2xl">
           <ZenDialogHeader>
-            <ZenDialogTitle className="flex items-center gap-2 font-serif">
-              <WandSparkles className="h-5 w-5 text-zen-secondary" aria-hidden="true" />
-              Overall jar review
-            </ZenDialogTitle>
+            <ZenDialogTitle className="font-display">Quiet jar review</ZenDialogTitle>
             <ZenDialogDescription>
-              A summary of your gratitude trend across saved papers.
+              A gentle look across the moments you&apos;ve kept.
             </ZenDialogDescription>
           </ZenDialogHeader>
 
           {overallReview ? (
             <div className="space-y-3">
-              <p className="zen-body-sm text-zen-secondary">
-                Entries analyzed: {overallReview.entriesCount}
+              <p className="font-ui text-sm text-zen-fg-muted">
+                Moments considered: {overallReview.entriesCount}
               </p>
-              <p className="whitespace-pre-wrap zen-body-sm text-zen-fg font-serif">
+              <p className="whitespace-pre-wrap font-display text-[1.0625rem] leading-relaxed text-zen-fg">
                 {overallReview.review}
               </p>
             </div>
           ) : (
             <ZenSkeleton className="h-40 w-full" rounded="xl" />
           )}
+
+          <div className="mt-4 flex justify-end">
+            <ZenButton variant="outline" onClick={() => setReviewDialogOpen(false)}>
+              Close
+            </ZenButton>
+          </div>
         </ZenDialogContent>
       </ZenDialog>
-      </ZenPage>
-    </ModulePage>
+    </ZenPage>
   );
-};
+}
 
 export default function GratitudePage() {
   return (
