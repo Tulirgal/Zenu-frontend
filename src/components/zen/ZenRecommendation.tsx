@@ -4,13 +4,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, ChevronDown } from 'lucide-react';
+import { ChevronDown, Play } from 'lucide-react';
 import { getRecommendations, type RecommendationTodayResponse } from '@/lib/signals';
 import { setRecommendationLaunch } from '@/lib/recommendationAttribution';
 import { cn } from '@/lib/utils';
 import { ZenButton } from './ZenButton';
 import { ZenSkeleton } from './ZenSkeleton';
-import { Panda } from '@/components/panda/Panda';
 import {
   mapRecommendationToPanda,
   MODULE_ROUTES,
@@ -117,17 +116,20 @@ export function ZenRecommendation({
 
   return (
     <section
-      className={cn('relative zen-home-section overflow-hidden rounded-zen-xl md:rounded-zen-2xl', className)}
+      className={cn(
+        'relative zen-home-section overflow-hidden rounded-zen-xl md:rounded-zen-2xl h-full',
+        className,
+      )}
       aria-labelledby="home-rec-heading"
     >
       <div
         className={cn(
-          'relative z-10',
-          'bg-zen-surface/85 border border-zen-border-soft/50',
-          'shadow-[0_10px_32px_-20px_rgba(30,41,90,0.12)]',
-          'grid grid-cols-1 md:grid-cols-[1.2fr_0.8fr] md:items-center',
-          'px-4 py-5 sm:px-6 md:px-9 md:py-9',
-          'gap-3 md:gap-6',
+          'relative z-10 h-full',
+          'bg-zen-surface border border-zen-border-soft/55',
+          'shadow-[0_8px_28px_-18px_rgba(30,41,90,0.14)]',
+          'grid grid-cols-1 md:grid-cols-[1.35fr_0.85fr] md:items-center',
+          'px-4 py-5 sm:px-6 lg:px-8 lg:py-8',
+          'gap-3 md:gap-4',
         )}
       >
         <AnimatePresence mode="wait">
@@ -146,17 +148,14 @@ export function ZenRecommendation({
               className="pointer-events-none absolute -right-2 top-1 md:hidden"
             />
 
-            <p className="zen-eyebrow text-zen-secondary mb-2 md:mb-3">For you right now</p>
-            <p className="font-ui text-[0.8125rem] leading-snug text-zen-fg-muted mb-2.5 md:mb-3.5 max-w-[15.5rem] md:max-w-md pr-20 md:pr-0">
-              {contextLine}
-            </p>
+            <p className="zen-eyebrow text-zen-secondary mb-2 md:mb-3">Today&apos;s focus</p>
             <h2
               id="home-rec-heading"
-              className="font-display text-[1.375rem] sm:text-[1.65rem] md:text-[2rem] leading-[1.18] tracking-tight text-zen-fg font-semibold pr-16 md:pr-0"
+              className="font-display text-[1.375rem] sm:text-[1.65rem] lg:text-[1.85rem] leading-[1.18] tracking-tight text-zen-fg font-semibold pr-16 md:pr-0"
             >
               {selected.name}
             </h2>
-            <p className="font-ui text-[0.875rem] leading-relaxed text-zen-fg-muted mt-2 md:mt-2.5 max-w-md">
+            <p className="font-ui text-[0.875rem] leading-relaxed text-zen-fg-muted mt-2 md:mt-2.5 max-w-md pr-16 md:pr-0">
               {mapped.defaultMessage}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -169,14 +168,17 @@ export function ZenRecommendation({
                 </span>
               ) : null}
             </div>
+            <p className="font-ui text-[0.75rem] leading-snug text-zen-fg-subtle mt-2.5 max-w-md hidden md:block">
+              {contextLine}
+            </p>
             <div className="mt-4 md:mt-5 flex flex-wrap items-center gap-2.5">
-              <ZenButton asChild size="lg" variant="secondary" className="min-h-11 rounded-zen-xl">
+              <ZenButton asChild size="lg" variant="secondary" className="min-h-11 rounded-zen-xl gap-2">
                 <Link
                   href={route}
                   onClick={() => setRecommendationLaunch(data.log_id, route)}
                 >
-                  Start
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  <Play className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+                  Start now
                 </Link>
               </ZenButton>
               <button
@@ -211,31 +213,12 @@ export function ZenRecommendation({
           </motion.div>
         </AnimatePresence>
 
-        {/* Desktop: atmosphere + Panda composition */}
-        <div className="relative hidden md:flex justify-end items-center min-h-[11rem]">
+        {/* Desktop: module atmosphere only — Home Panda lives beside this card */}
+        <div className="relative hidden md:flex justify-center items-center min-h-[10.5rem]">
           <RecommendationAtmosphere
             moduleId={selected.module_id}
-            className="absolute inset-0 flex items-center justify-center opacity-90"
+            className="absolute inset-0 flex items-center justify-center opacity-95"
           />
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`panda-${selected.module_id}-${refreshKey}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: reducedMotion ? 0.12 : 0.28 }}
-              className="relative z-10"
-            >
-              <Panda
-                emotion={mapped.emotion}
-                activity={mapped.activity}
-                animation={mapped.animation}
-                mode="responsive"
-                size={140}
-                label="Panda recommendation companion"
-              />
-            </motion.div>
-          </AnimatePresence>
         </div>
       </div>
     </section>

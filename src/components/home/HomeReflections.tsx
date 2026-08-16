@@ -27,16 +27,16 @@ export function HomeReflections({
 }) {
   return (
     <section className={cn('zen-home-section', className)} aria-labelledby="home-reflections-heading">
-      <div className="flex flex-col gap-1 mb-3 md:flex-row md:items-baseline md:justify-between md:mb-5">
+      <div className="flex flex-col gap-1 mb-2.5 sm:mb-3 sm:flex-row sm:items-baseline sm:justify-between">
         <h2
           id="home-reflections-heading"
-          className="font-ui text-[0.875rem] font-medium text-zen-fg md:zen-h3 md:font-medium"
+          className="font-ui text-[0.8125rem] sm:text-[0.875rem] font-medium text-zen-fg"
         >
-          Recent reflections
+          Recent Reflections
         </h2>
         <Link
           href="/journal"
-          className="text-[0.75rem] text-zen-secondary hover:text-zen-fg transition-colors focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2 rounded-sm md:zen-body-sm"
+          className="text-[0.6875rem] sm:text-[0.75rem] text-zen-secondary hover:text-zen-fg transition-colors focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2 rounded-sm"
         >
           Open journal →
         </Link>
@@ -52,7 +52,7 @@ export function HomeReflections({
           No reflections yet.
         </p>
       ) : (
-        <ul className="space-y-2.5 md:space-y-4">
+        <ul className="space-y-2.5">
           {entries.map((entry, i) => (
             <li key={entry.id} className="flex gap-2.5">
               <span
@@ -68,7 +68,7 @@ export function HomeReflections({
                 <p className="text-[0.6875rem] text-zen-fg-subtle">
                   {formatEntryDate(entry.createdAt)}
                 </p>
-                <p className="text-[0.8125rem] text-zen-fg mt-0.5 line-clamp-2 font-serif md:zen-body-sm">
+                <p className="text-[0.75rem] sm:text-[0.8125rem] text-zen-fg mt-0.5 line-clamp-1 sm:line-clamp-2 font-serif">
                   {entry.title?.trim() || entry.content}
                 </p>
               </div>

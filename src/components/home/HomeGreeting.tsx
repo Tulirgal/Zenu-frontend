@@ -43,7 +43,7 @@ export function HomeGreeting({
   return (
     <div
       className={cn(
-        'zen-home-section relative overflow-visible md:max-w-2xl',
+        'zen-home-section relative overflow-visible',
         className,
       )}
     >
@@ -68,12 +68,12 @@ export function HomeGreeting({
       <div className="relative grid grid-cols-[minmax(0,1fr)_6.25rem] items-end gap-0 md:grid-cols-1">
         <div className="min-w-0 relative z-10 pb-0.5 pr-1">
           <p className="font-ui text-[0.8125rem] font-medium tracking-tight text-zen-secondary mb-2.5 md:zen-eyebrow md:mb-3">
-            {greeting}, {displayName}.
+            {greeting}, {displayName}
           </p>
-          <h1 className="font-display text-[1.55rem] leading-[1.16] tracking-[-0.03em] font-semibold text-zen-fg md:zen-home-display">
+          <h1 className="font-display text-[1.55rem] leading-[1.16] tracking-[-0.03em] font-semibold text-zen-fg md:zen-home-display md:text-[2.35rem]">
             You&apos;re safe here.
           </h1>
-          <p className="font-ui text-[0.875rem] leading-relaxed text-zen-fg-muted mt-2.5 max-w-[15.5rem] md:zen-body md:mt-3 md:max-w-md">
+          <p className="font-ui text-[0.875rem] leading-relaxed text-zen-fg-muted mt-2.5 max-w-[15.5rem] md:max-w-xl md:zen-body md:mt-3">
             Let&apos;s take a gentle step today.
           </p>
         </div>

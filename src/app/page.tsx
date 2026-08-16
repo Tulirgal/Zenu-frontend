@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   ArrowRight,
@@ -15,7 +14,9 @@ import { apiClient } from '@/lib/apiClient';
 import type { JournalEntry } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { shouldShowPSS } from '@/lib/pssSchedule';
+import { AnimatePresence, motion } from 'framer-motion';
 import PandaAvatar from '@/components/PandaAvatar';
+import { Panda } from '@/components/panda/Panda';
 import type { PandaEmotion } from '@/components/panda/types';
 import {
   HomeClosing,
@@ -34,6 +35,7 @@ import {
   ZenRecommendation,
   ZenCard,
 } from '@/components/zen';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 const useHomeData = (enabled: boolean) => {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
@@ -185,6 +187,7 @@ const HomePage = () => {
   const [moodGlow, setMoodGlow] = useState<string | null>(null);
   const [pandaPresentation, setPandaPresentation] =
     useState<HomePandaPresentation | null>(null);
+  const reducedMotion = usePrefersReducedMotion();
 
   const displayName =
     user?.username ?? user?.fullName ?? user?.email?.split('@')[0] ?? 'friend';
@@ -233,35 +236,98 @@ const HomePage = () => {
       </div>
 
       <ZenContainer
-        maxWidth="lg"
-        className="relative z-10 pt-3 pb-8 md:pt-6 md:pb-20"
+        maxWidth="full"
+        className="relative z-10 w-full max-w-none pt-3 pb-8 px-4 sm:px-5 md:pt-5 md:pb-16 md:px-6 lg:px-8 xl:px-10"
       >
         <HomeHeader />
 
-        <div className="flex flex-col gap-9 md:gap-16">
+        <div className="flex flex-col gap-6 md:gap-10 lg:gap-12">
           <HomeGreeting displayName={displayName} panda={pandaPresentation} />
 
           <ZenMoodSelector onSelect={handleMoodSelect} />
 
           <PssNudge visible={showPssNudge} onDismiss={() => setNudgeDismissed(true)} />
 
-          <ZenRecommendation
-            refreshKey={recRefreshKey}
-            onPresentationChange={handlePresentationChange}
-          />
+          {/* Desktop: recommendation | (panda + garden/reflections). Mobile: stacked. */}
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(17rem,0.9fr)] gap-4 lg:gap-5 lg:items-stretch">
+            <ZenRecommendation
+              refreshKey={recRefreshKey}
+              onPresentationChange={handlePresentationChange}
+              className="h-full"
+            />
 
-          {error ? (
-            <ZenCard variant="subtle" className="border-zen-danger/30 bg-zen-danger-soft text-center">
-              <p className="zen-body text-zen-danger">{error}</p>
-            </ZenCard>
-          ) : null}
+            {error ? (
+              <ZenCard variant="subtle" className="border-zen-danger/30 bg-zen-danger-soft text-center lg:col-span-2">
+                <p className="zen-body text-zen-danger">{error}</p>
+              </ZenCard>
+            ) : null}
+
+            {/* Desktop only: one Home Panda above paired secondary cards */}
+            <div className="hidden lg:flex flex-col gap-4 min-h-0">
+              <div className="relative flex flex-1 items-end justify-center min-h-[9.5rem] overflow-hidden rounded-zen-xl">
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  aria-hidden="true"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse 80% 70% at 55% 70%, hsl(var(--zen-secondary) / 0.16) 0%, hsl(var(--zen-emotion-calm) / 0.07) 45%, transparent 75%)',
+                  }}
+                />
+                <div
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-16 opacity-60"
+                  aria-hidden="true"
+                  style={{
+                    background:
+                      'linear-gradient(180deg, transparent 0%, hsl(262 35% 88% / 0.45) 100%)',
+                  }}
+                />
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={
+                      pandaPresentation
+                        ? `${pandaPresentation.emotion}-${pandaPresentation.activity ?? 'none'}`
+                        : 'idle'
+                    }
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: reducedMotion ? 0.12 : 0.28 }}
+                    className="relative z-10 pb-1"
+                  >
+                    <Panda
+                      emotion={pandaPresentation?.emotion ?? 'calm'}
+                      activity={pandaPresentation?.activity ?? null}
+                      animation={pandaPresentation?.animation ?? 'idle'}
+                      mode="responsive"
+                      size={148}
+                      label="Panda companion"
+                    />
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3.5">
+                <HomeGarden className="rounded-zen-xl bg-zen-surface/90 border border-zen-border-soft/55 p-3.5 shadow-[0_6px_20px_-16px_rgba(30,41,90,0.12)]" />
+                <HomeReflections
+                  entries={entries}
+                  loading={dashboardLoading}
+                  className="rounded-zen-xl bg-zen-surface/90 border border-zen-border-soft/55 p-3.5 shadow-[0_6px_20px_-16px_rgba(30,41,90,0.12)]"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile: secondary pair before wellness space (reference). */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:hidden">
+            <HomeGarden className="rounded-zen-xl bg-zen-surface/90 border border-zen-border-soft/55 p-3 shadow-[0_6px_18px_-14px_rgba(30,41,90,0.12)]" />
+            <HomeReflections
+              entries={entries}
+              loading={dashboardLoading}
+              className="rounded-zen-xl bg-zen-surface/90 border border-zen-border-soft/55 p-3 shadow-[0_6px_18px_-14px_rgba(30,41,90,0.12)]"
+            />
+          </div>
 
           <HomeYourSpace />
-
-          <div className="grid grid-cols-2 gap-5 md:gap-12 pt-1">
-            <HomeReflections entries={entries} loading={dashboardLoading} />
-            <HomeGarden />
-          </div>
 
           <HomeClosing className="mb-1" />
         </div>

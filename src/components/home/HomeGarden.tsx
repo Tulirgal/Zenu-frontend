@@ -38,7 +38,7 @@ export function HomeGarden({ className }: { className?: string }) {
         <div className="min-w-0">
           <h2
             id="home-garden-heading"
-            className="font-ui text-[0.875rem] font-medium text-zen-fg md:zen-h3 md:font-medium"
+            className="font-ui text-[0.875rem] font-medium text-zen-fg"
           >
             Healing Garden
           </h2>

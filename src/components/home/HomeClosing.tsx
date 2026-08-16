@@ -4,7 +4,7 @@ export function HomeClosing({ className }: { className?: string }) {
   return (
     <section
       className={cn(
-        'zen-home-section relative overflow-hidden rounded-zen-xl px-5 py-8 text-center md:rounded-zen-2xl md:px-10 md:py-12',
+        'zen-home-section relative overflow-hidden rounded-zen-xl px-5 py-7 text-center md:rounded-zen-2xl md:px-10 md:py-10',
         className,
       )}
       aria-label="Closing thought"

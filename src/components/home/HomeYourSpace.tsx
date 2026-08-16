@@ -153,13 +153,16 @@ function SpaceMark({ identity, compact }: { identity: string; compact?: boolean 
 export function HomeYourSpace({ className }: { className?: string }) {
   return (
     <section className={cn('zen-home-section', className)} aria-labelledby="home-space-heading">
-      <div className="flex items-baseline justify-between gap-3 mb-3.5 md:mb-6">
-        <h2 id="home-space-heading" className="font-ui text-[0.9375rem] font-medium text-zen-fg md:zen-h3">
-          Your space
+      <div className="flex items-baseline justify-between gap-3 mb-4 md:mb-5">
+        <h2
+          id="home-space-heading"
+          className="font-ui text-[0.9375rem] font-medium text-zen-fg md:text-lg"
+        >
+          Your wellness space
         </h2>
         <Link
           href="/bubbles"
-          className="font-ui text-[0.8125rem] text-zen-secondary/90 hover:text-zen-fg transition-colors focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2 rounded-sm"
+          className="font-ui text-[0.8125rem] text-zen-secondary hover:text-zen-fg transition-colors focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2 rounded-sm"
         >
           Explore all →
         </Link>
@@ -170,7 +173,7 @@ export function HomeYourSpace({ className }: { className?: string }) {
           'flex gap-3 overflow-x-auto pb-2 -mx-4 pl-4 pr-6 snap-x snap-mandatory',
           '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
           'md:mx-0 md:px-0 md:pr-0 md:overflow-visible md:pb-0 md:snap-none',
-          'md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4',
+          'md:grid md:grid-cols-3 lg:grid-cols-6 md:gap-3 xl:gap-3.5',
         )}
       >
         {SPACE_ITEMS.map((item) => (
@@ -179,32 +182,34 @@ export function HomeYourSpace({ className }: { className?: string }) {
             href={item.href}
             className={cn(
               'group relative overflow-hidden rounded-zen-xl',
-              'bg-zen-surface/75 border border-zen-border-soft/50',
+              'bg-zen-surface border border-zen-border-soft/60',
               'transition-colors duration-zen-fast ease-zen-out',
               'active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2',
-              'shrink-0 w-[9.75rem] snap-start p-3.5 min-h-[9.5rem]',
-              'md:w-auto md:min-h-[9.5rem] md:p-5 md:shrink',
+              // Mobile rail — ~2.5 cards visible on 390–430
+              'shrink-0 w-[8.25rem] snap-start p-3.5 min-h-[8.5rem]',
+              // Desktop — six equal columns from lg (1280 content width)
+              'md:w-auto md:min-h-[10.25rem] md:p-4 md:shrink',
             )}
           >
             <div
               className={cn(
-                'absolute -right-2 -bottom-4 h-[4.5rem] w-[4.5rem] rounded-full bg-gradient-to-tl to-transparent opacity-95 md:h-24 md:w-24 md:-right-5 md:-bottom-7',
+                'absolute -right-2 -bottom-3 h-16 w-16 rounded-full bg-gradient-to-tl to-transparent opacity-95 md:h-20 md:w-20 md:-right-3 md:-bottom-4',
                 item.glowClass,
               )}
               aria-hidden="true"
             />
             <div className="relative z-10 flex h-full flex-col">
-              <h3 className="font-ui text-[0.8125rem] font-medium text-zen-fg tracking-tight leading-snug md:text-[0.9375rem]">
+              <h3 className="font-ui text-[0.8125rem] font-medium text-zen-fg tracking-tight leading-snug">
                 {item.title}
               </h3>
-              <p className="hidden md:block zen-body-sm text-zen-fg-muted mt-1.5 max-w-[16rem]">
+              <p className="hidden md:block font-ui text-[0.75rem] text-zen-fg-muted mt-1.5 leading-snug line-clamp-2">
                 {item.description}
               </p>
-              <div className={cn('mt-auto pt-5 flex items-end justify-between', item.accentClass)}>
+              <div className={cn('mt-auto pt-4 flex items-end justify-between', item.accentClass)}>
                 <span
                   className={cn(
-                    'inline-flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full',
-                    'bg-zen-bg-subtle/80 text-zen-fg-muted text-xs',
+                    'inline-flex h-7 w-7 items-center justify-center rounded-full',
+                    'bg-zen-bg-subtle/90 text-zen-fg-muted text-xs',
                     'group-hover:bg-zen-fg group-hover:text-white',
                     'transition-colors duration-zen-fast',
                   )}
