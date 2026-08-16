@@ -2,26 +2,27 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { trackEngagement } from '@/lib/signals';
-
-import { BreathingSelector } from '@/components/BreathingSelector';
-import { BreathingModal } from '@/components/BreathingModal';
+import { trackEngagement, getRecommendations } from '@/lib/signals';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useAuth } from '@/components/providers/AuthProvider';
-import ZenFocusMode from '@/components/layout/ZenFocusMode';
 import { apiClient } from '@/lib/apiClient';
 import type { BreathingPattern } from '@/lib/types';
-import { ZenPage, ZenContainer, ZenButton } from '@/components/zen';
-import ModulePage from '@/components/ui/ModulePage';
-import { getTheme } from '@/lib/moduleThemes';
+import { ZenPage, ZenButton } from '@/components/zen';
+import { cn } from '@/lib/utils';
+import { BreathingHeader } from './components/BreathingHeader';
+import { QuickBreathingSession } from './components/QuickBreathingSession';
+import { BreathingTechniqueGrid } from './components/BreathingTechniqueGrid';
+import { BreathingPlayer } from './components/BreathingPlayer';
+import { pickQuickPattern } from './components/patternVisual';
 
-const Breathing = () => {
+function BreathingPageInner() {
   const { user } = useAuth();
   const [patterns, setPatterns] = useState<BreathingPattern[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPattern, setSelectedPattern] = useState<BreathingPattern | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPlayerOpen, setIsPlayerOpen] = useState(false);
+  const [recDurationMin, setRecDurationMin] = useState<number | null>(null);
 
   const loadPatterns = useCallback(async () => {
     setLoading(true);
@@ -43,20 +44,40 @@ const Breathing = () => {
     void loadPatterns();
   }, [user, loadPatterns]);
 
-  const handleSelectPattern = (pattern: BreathingPattern) => {
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void (async () => {
+      const rec = await getRecommendations();
+      if (cancelled || !rec?.recommendations?.length) return;
+      const breathing = rec.recommendations.find((r) => r.module_id === 'breathing');
+      if (breathing && Number.isFinite(breathing.duration_min)) {
+        setRecDurationMin(breathing.duration_min);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const quickPattern = useMemo(
+    () => pickQuickPattern(patterns, recDurationMin),
+    [patterns, recDurationMin],
+  );
+
+  const handleStart = (pattern: BreathingPattern) => {
     setSelectedPattern(pattern);
-    setIsModalOpen(true);
+    setIsPlayerOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleClosePlayer = () => {
+    setIsPlayerOpen(false);
     setSelectedPattern(null);
   };
 
   const handleSessionComplete = async (durationSeconds: number) => {
     if (!selectedPattern) return;
     const patternId = selectedPattern.id;
-
     try {
       await apiClient.logBreathingSession({ patternId, durationSeconds });
       await apiClient.recordActivity('breathing', { patternId, durationSeconds });
@@ -70,49 +91,69 @@ const Breathing = () => {
     }
   };
 
-  const displayName = useMemo(() => {
-    if (!user) return undefined;
-    return user.username ?? user.fullName ?? user.email?.split('@')[0] ?? undefined;
-  }, [user]);
+  return (
+    <ZenPage
+      atmosphere="home"
+      className={cn(
+        'relative min-h-dvh overflow-x-hidden',
+        'bg-[hsl(40,35%,99%)]',
+        'pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-16',
+        'pt-6 md:pt-10',
+      )}
+    >
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 900px 480px at 12% 0%, hsl(262 40% 72% / 0.12), transparent 60%), radial-gradient(ellipse 700px 400px at 90% 15%, hsl(200 55% 70% / 0.1), transparent 55%)',
+          }}
+        />
+      </div>
 
-  const theme = getTheme('breathing');
+      <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
+        <BreathingHeader />
 
+        {error ? (
+          <div className="mx-auto mt-8 max-w-lg rounded-zen-xl border border-zen-danger/20 bg-zen-danger-soft/40 px-5 py-4 text-center">
+            <p className="font-ui text-sm text-zen-danger">{error}</p>
+            <ZenButton variant="outline" className="mt-4" onClick={loadPatterns}>
+              Try again
+            </ZenButton>
+          </div>
+        ) : null}
+
+        {quickPattern && !loading ? (
+          <div className="mt-10 md:mt-12">
+            <QuickBreathingSession pattern={quickPattern} onStart={handleStart} />
+          </div>
+        ) : null}
+
+        <div className="mt-10 md:mt-14">
+          <BreathingTechniqueGrid
+            patterns={patterns}
+            loading={loading}
+            onStart={handleStart}
+          />
+        </div>
+      </div>
+
+      {selectedPattern ? (
+        <BreathingPlayer
+          isOpen={isPlayerOpen}
+          pattern={selectedPattern}
+          onClose={handleClosePlayer}
+          onComplete={handleSessionComplete}
+        />
+      ) : null}
+    </ZenPage>
+  );
+}
+
+export default function BreathingPage() {
   return (
     <RequireAuth>
-      <ZenFocusMode title="Breathe">
-        <ModulePage theme={theme}>
-          <ZenPage atmosphere="none" className="min-h-dvh pt-16">
-          <ZenContainer maxWidth="xl" className="py-8">
-            {error ? (
-              <div className="max-w-xl mx-auto mb-8 rounded-zen-xl border border-zen-danger/25 bg-zen-danger-soft px-6 py-4 text-center text-zen-danger">
-                <p className="mb-4">{error}</p>
-                <ZenButton variant="outline" onClick={loadPatterns}>
-                  Try again
-                </ZenButton>
-              </div>
-            ) : null}
-
-            <BreathingSelector
-              firstName={displayName}
-              patterns={patterns}
-              loading={loading}
-              onSelectPattern={handleSelectPattern}
-            />
-
-            {selectedPattern ? (
-              <BreathingModal
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}
-                pattern={selectedPattern}
-                onComplete={handleSessionComplete}
-              />
-            ) : null}
-          </ZenContainer>
-          </ZenPage>
-        </ModulePage>
-      </ZenFocusMode>
+      <BreathingPageInner />
     </RequireAuth>
   );
-};
-
-export default Breathing;
+}

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React from 'react';
 import { ParticleCanvas } from '@/components/ParticleCanvas';
@@ -12,13 +12,14 @@ export interface ZenBreathingCircleProps {
   isPaused: boolean;
   speed: number;
   onCycleComplete?: () => void;
-  onPhaseChange?: (phase: BreathPhase, seconds: number) => void;
+  onPhaseChange?: (phase: BreathPhase | string, seconds: number) => void;
+  onPhaseTick?: (phase: string, remainingSeconds: number, phaseProgress: number) => void;
+  hideLabels?: boolean;
   className?: string;
 }
 
 /**
  * Full-screen breathing circle — wraps ParticleCanvas with zen chrome.
- * Phase callbacks enable PandaAvatar sync to inhale / hold / exhale.
  */
 export function ZenBreathingCircle({
   pattern,
@@ -27,6 +28,8 @@ export function ZenBreathingCircle({
   speed,
   onCycleComplete,
   onPhaseChange,
+  onPhaseTick,
+  hideLabels = true,
   className,
 }: ZenBreathingCircleProps) {
   return (
@@ -38,6 +41,8 @@ export function ZenBreathingCircle({
         speed={speed}
         onCycleComplete={onCycleComplete}
         onPhaseChange={onPhaseChange}
+        onPhaseTick={onPhaseTick}
+        hideLabels={hideLabels}
       />
     </div>
   );

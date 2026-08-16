@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
-import { Flame, CloudRain, Waves, TreePine, SlidersHorizontal } from 'lucide-react';
+import { Flame, CloudRain, Waves, TreePine, Sparkles } from 'lucide-react';
 import {
   ZenSheet,
   ZenSheetContent,
@@ -15,53 +15,54 @@ import { cn } from '@/lib/utils';
 type SoundType = 'fire' | 'rain' | 'forest' | 'ocean';
 
 const SOUND_CONTROLS = [
-  { type: 'fire' as const, label: 'Fire', icon: Flame, tint: 'text-zen-joy', sliderClass: 'slider-fire' },
-  { type: 'rain' as const, label: 'Rain', icon: CloudRain, tint: 'text-zen-primary', sliderClass: 'slider-rain' },
-  { type: 'forest' as const, label: 'Forest', icon: TreePine, tint: 'text-zen-accent', sliderClass: 'slider-forest' },
-  { type: 'ocean' as const, label: 'Ocean', icon: Waves, tint: 'text-zen-secondary', sliderClass: 'slider-ocean' },
+  { type: 'fire' as const, label: 'Fire', icon: Flame },
+  { type: 'rain' as const, label: 'Rain', icon: CloudRain },
+  { type: 'forest' as const, label: 'Forest', icon: TreePine },
+  { type: 'ocean' as const, label: 'Ocean', icon: Waves },
 ];
 
-function SoundscapeControls({
-  volumes,
+function VolumeRow({
+  type,
+  label,
+  icon: Icon,
+  volume,
   onChange,
 }: {
-  volumes: Record<SoundType, number>;
+  type: SoundType;
+  label: string;
+  icon: typeof Flame;
+  volume: number;
   onChange: (sound: SoundType, value: number) => void;
 }) {
   return (
-    <div className="flex flex-col gap-5 w-full min-w-0">
-      {SOUND_CONTROLS.map(({ type, label, icon: Icon, tint, sliderClass }) => (
-        <label key={type} className="flex items-center gap-3 min-h-11 w-full min-w-0">
-          <span className={cn('flex-shrink-0', tint)}>
-            <Icon className="w-5 h-5" aria-hidden="true" />
-          </span>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={volumes[type]}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              onChange(type, parseInt(e.target.value, 10))
-            }
-            aria-label={`${label} ambient volume`}
-            className={cn(
-              'flex-1 min-w-0 w-full h-2 bg-zen-bg-muted rounded-lg appearance-none cursor-pointer slider-thumb',
-              sliderClass,
-            )}
-          />
-          <span className="zen-caption text-zen-fg-muted w-12 shrink-0 capitalize">{type}</span>
-        </label>
-      ))}
-    </div>
+    <label className="flex items-center gap-3 min-h-11 w-full min-w-0">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-zen-md border border-zen-border-soft bg-zen-bg-subtle text-zen-fg-muted">
+        <Icon className="h-4 w-4" aria-hidden="true" />
+      </span>
+      <span className="w-16 shrink-0 font-ui text-sm text-zen-fg">{label}</span>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        value={volume}
+        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+          onChange(type, parseInt(e.target.value, 10))
+        }
+        aria-label={`${label} ambient volume`}
+        className="h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-lg bg-zen-bg-muted accent-zen-secondary"
+      />
+      <span className="w-8 shrink-0 text-right font-ui text-xs text-zen-fg-subtle">{volume}</span>
+    </label>
   );
 }
 
 /**
- * Ambient soundscape mixer — desktop glass panel, mobile bottom sheet.
- * Separate from guided meditation narration (ZenGuidedPlayer).
+ * Compact atmosphere mixer — chips on desktop, sheet on mobile.
+ * Fire / Rain / Forest / Ocean volume behavior preserved.
  */
 export function ZenSoundscapeBar({ className }: { className?: string }) {
   const [volumes, setVolumes] = useState({ fire: 0, rain: 0, forest: 0, ocean: 0 });
+  const [expanded, setExpanded] = useState<SoundType | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const fireRef = useRef<HTMLAudioElement>(null);
   const rainRef = useRef<HTMLAudioElement>(null);
@@ -103,42 +104,98 @@ export function ZenSoundscapeBar({ className }: { className?: string }) {
     };
   }, []);
 
+  const toggleChip = (type: SoundType) => {
+    if (expanded === type) {
+      setExpanded(null);
+      return;
+    }
+    setExpanded(type);
+    if (volumes[type] === 0) {
+      handleVolumeChange(type, 35);
+    }
+  };
+
   return (
-    <>
-      {/* Desktop floating bar */}
-      <div
-        className={cn(
-          'hidden md:block fixed left-4 top-1/2 -translate-y-1/2 z-30',
-          className,
-        )}
-      >
-        <div className="glass-floating rounded-zen-xl p-5 w-56 max-w-[calc(100vw-2rem)] shadow-zen-floating">
-          <p className="zen-label text-zen-fg-subtle mb-1">Ambient</p>
-          <p className="zen-caption text-zen-fg-muted mb-4">Layer soft background sound</p>
-          <SoundscapeControls volumes={volumes} onChange={handleVolumeChange} />
+    <div className={cn('w-full min-w-0', className)}>
+      <div className="hidden md:block rounded-zen-xl border border-zen-border-soft bg-white/70 px-4 py-3 backdrop-blur-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="mr-1 inline-flex items-center gap-1.5 font-ui text-sm text-zen-fg-muted">
+            <Sparkles className="h-3.5 w-3.5 text-zen-secondary" aria-hidden="true" />
+            Atmosphere
+          </span>
+          {SOUND_CONTROLS.map(({ type, label, icon: Icon }) => {
+            const active = volumes[type] > 0;
+            const selected = expanded === type;
+            return (
+              <button
+                key={type}
+                type="button"
+                onClick={() => toggleChip(type)}
+                className={cn(
+                  'inline-flex min-h-10 items-center gap-1.5 rounded-zen-full border px-3 font-ui text-sm transition-colors duration-100',
+                  'active:scale-[0.97]',
+                  'focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2',
+                  active || selected
+                    ? 'border-zen-secondary/35 bg-zen-secondary-soft text-zen-secondary'
+                    : 'border-zen-border-soft bg-zen-bg-subtle/80 text-zen-fg-muted hover:text-zen-fg',
+                )}
+                aria-pressed={active}
+              >
+                <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                {label}
+              </button>
+            );
+          })}
         </div>
+
+        {expanded ? (
+          <div className="mt-3 border-t border-zen-border-soft pt-3">
+            {SOUND_CONTROLS.filter((s) => s.type === expanded).map(({ type, label, icon }) => (
+              <VolumeRow
+                key={type}
+                type={type}
+                label={label}
+                icon={icon}
+                volume={volumes[type]}
+                onChange={handleVolumeChange}
+              />
+            ))}
+          </div>
+        ) : null}
       </div>
 
-      {/* Mobile trigger — clear of ZenBottomNav + safe area (focus mode has no bottom nav) */}
-      <div className="md:hidden fixed right-4 z-40 bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))]">
+      <div className="md:hidden">
         <ZenButton
-          variant="glass"
-          size="icon-lg"
-          className="rounded-full shadow-zen-floating"
-          aria-label="Open ambient soundscape controls"
+          type="button"
+          variant="outline"
+          className="w-full min-h-11 justify-center"
+          aria-label="Open atmosphere controls"
           onClick={() => setSheetOpen(true)}
         >
-          <SlidersHorizontal className="h-5 w-5" />
+          <Sparkles className="h-4 w-4 text-zen-secondary" aria-hidden="true" />
+          Atmosphere
         </ZenButton>
       </div>
 
       <ZenSheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <ZenSheetContent side="bottom" className="md:hidden pb-safe max-h-[85dvh] overflow-y-auto">
+        <ZenSheetContent
+          side="bottom"
+          className="md:hidden rounded-t-zen-2xl pb-safe max-h-[85dvh] overflow-y-auto"
+        >
           <ZenSheetHeader>
-            <ZenSheetTitle>Ambient soundscape</ZenSheetTitle>
+            <ZenSheetTitle className="font-ui text-base">Atmosphere</ZenSheetTitle>
           </ZenSheetHeader>
-          <div className="mt-4 min-w-0">
-            <SoundscapeControls volumes={volumes} onChange={handleVolumeChange} />
+          <div className="mt-4 flex min-w-0 flex-col gap-2">
+            {SOUND_CONTROLS.map(({ type, label, icon }) => (
+              <VolumeRow
+                key={type}
+                type={type}
+                label={label}
+                icon={icon}
+                volume={volumes[type]}
+                onChange={handleVolumeChange}
+              />
+            ))}
           </div>
         </ZenSheetContent>
       </ZenSheet>
@@ -147,6 +204,6 @@ export function ZenSoundscapeBar({ className }: { className?: string }) {
       <audio ref={rainRef} src={AMBIENT_SOURCES.rain} loop preload="none" />
       <audio ref={forestRef} src={AMBIENT_SOURCES.forest} loop preload="none" />
       <audio ref={oceanRef} src={AMBIENT_SOURCES.ocean} loop preload="none" />
-    </>
+    </div>
   );
 }

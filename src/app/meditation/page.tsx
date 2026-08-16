@@ -1,258 +1,22 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCallback, useEffect, useState } from 'react';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useAuth } from '@/components/providers/AuthProvider';
 import ZenFocusMode from '@/components/layout/ZenFocusMode';
-import { apiClient } from '@/lib/apiClient';
-import type { Meditation } from '@/lib/types';
-import { toast } from 'sonner';
-import { trackEngagement } from '@/lib/signals';
-import { cn } from '@/lib/utils';
 import {
   ZenPage,
-  ZenContainer,
-  ZenSection,
   ZenButton,
-  ZenSoundscapeBar,
 } from '@/components/zen';
-import ModulePage from '@/components/ui/ModulePage';
-import { getTheme } from '@/lib/moduleThemes';
-import { resolveGuidedAudioUrl } from '@/lib/meditationAudio';
+import { apiClient } from '@/lib/apiClient';
+import type { Meditation } from '@/lib/types';
+import { cn } from '@/lib/utils';
+import { PracticeCard } from './components/PracticeCard';
+import { AtmosphereControl } from './components/AtmosphereControl';
+import { SequenceTimeline } from './components/SequenceTimeline';
+import { TipsDisclosure } from './components/TipsDisclosure';
 
-function JPMRPlayer({ session }: { session: Meditation }) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  const [completed, setCompleted] = useState(false);
-  const startedRef = useRef(false);
-  const startTime = useRef(Date.now());
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const onLoaded = () => setLoaded(true);
-    const onTimeUpdate = () => {
-      setCurrentTime(audio.currentTime);
-      setProgress(audio.duration ? (audio.currentTime / audio.duration) * 100 : 0);
-    };
-    const onDurationChange = () => setDuration(audio.duration);
-    const onEnded = () => {
-      setPlaying(false);
-      setCompleted(true);
-      trackEngagement('meditation_jpmr', 'completed',
-        Math.round((Date.now() - startTime.current) / 1000));
-      apiClient.logMeditationSession({
-          meditationId: session.id,
-          durationSeconds: Math.round(audio.duration || (session.durationMinutes * 60)),
-      }).catch(console.error);
-    };
-
-    audio.addEventListener('loadeddata', onLoaded);
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('durationchange', onDurationChange);
-    audio.addEventListener('ended', onEnded);
-
-    return () => {
-      audio.removeEventListener('loadeddata', onLoaded);
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('durationchange', onDurationChange);
-      audio.removeEventListener('ended', onEnded);
-    };
-  }, [session.id, session.durationMinutes]);
-
-  const togglePlay = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (!startedRef.current) {
-      trackEngagement('meditation_jpmr', 'opened');
-      startedRef.current = true;
-    }
-    if (playing) {
-      audio.pause();
-      setPlaying(false);
-    } else {
-      audio.play();
-      setPlaying(true);
-    }
-  };
-
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    const audio = audioRef.current;
-    if (!audio || !duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pct = (e.clientX - rect.left) / rect.width;
-    audio.currentTime = pct * duration;
-  };
-
-  const formatTime = (s: number) => {
-    if (!s || isNaN(s)) return '0:00';
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${m}:${sec.toString().padStart(2, '0')}`;
-  };
-
-  const steps = [
-    { muscle: 'Hands & Forearms', instruction: 'Clench your fists tightly for 5 seconds, then release completely' },
-    { muscle: 'Upper Arms', instruction: 'Flex your biceps, hold for 5 seconds, then let go' },
-    { muscle: 'Shoulders', instruction: 'Raise shoulders to ears, hold for 5 seconds, then drop' },
-    { muscle: 'Face', instruction: 'Scrunch all facial muscles tightly, hold, then relax' },
-    { muscle: 'Chest & Stomach', instruction: 'Take a deep breath, hold and tighten core, then exhale fully' },
-    { muscle: 'Legs & Feet', instruction: 'Tense thighs, calves and curl toes, hold, then release' },
-  ];
-
-  const audioUrl = resolveGuidedAudioUrl(session.title, session.audioUrl);
-
-  return (
-    <div className="w-full max-w-5xl mx-auto px-4 lg:px-8">
-      {/* Audio element */}
-      <audio ref={audioRef} src={audioUrl || ''} preload="metadata" />
-
-      {/* Main player card */}
-      <div className="rounded-3xl overflow-hidden shadow-2xl mb-6"
-        style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e3a5f 100%)' }}>
-
-        {/* Visual: breathing orb */}
-        <div className="flex items-center justify-center" style={{ height: 260 }}>
-          <div className="relative flex items-center justify-center">
-            {/* Outer pulse rings */}
-            {playing && [1, 2, 3].map(i => (
-              <motion.div
-                key={i}
-                className="absolute rounded-full border border-purple-300"
-                style={{ width: 80 + i * 50, height: 80 + i * 50 }}
-                animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0, 0.3] }}
-                transition={{ duration: 4, repeat: Infinity, delay: i * 1.2 }}
-              />
-            ))}
-
-            {/* Play/pause button orb */}
-            <motion.button
-              onClick={togglePlay}
-              className="relative z-10 flex items-center justify-center rounded-full shadow-2xl"
-              style={{
-                width: 90, height: 90,
-                background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
-              }}
-              whileHover={{ scale: 1.06 }}
-              whileTap={{ scale: 0.94 }}
-            >
-              {playing ? (
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-                  <rect x="6" y="4" width="4" height="16" rx="1"/>
-                  <rect x="14" y="4" width="4" height="16" rx="1"/>
-                </svg>
-              ) : (
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
-                  <polygon points="5,3 19,12 5,21"/>
-                </svg>
-              )}
-            </motion.button>
-          </div>
-        </div>
-
-        {/* Track info */}
-        <div className="px-6 pb-2 text-center">
-          <h2 className="text-lg font-semibold text-white mb-0.5">{session.title}</h2>
-          <p className="text-xs text-purple-200">{session.durationMinutes} min · Relaxation · Beginner</p>
-        </div>
-
-        {/* Progress bar */}
-        <div className="px-6 pb-6 mt-4">
-          <div
-            className="w-full rounded-full cursor-pointer mb-2"
-            style={{ height: 6, background: 'rgba(255,255,255,0.15)' }}
-            onClick={handleSeek}
-          >
-            <motion.div
-              className="h-full rounded-full"
-              style={{
-                width: `${progress}%`,
-                background: 'linear-gradient(90deg, #a78bfa, #818cf8)',
-              }}
-            />
-          </div>
-          <div className="flex justify-between text-xs text-purple-200">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Description */}
-      <div className="rounded-2xl p-5 mb-6"
-        style={{ background: '#f8f6ff', border: '1px solid #e5e7eb' }}>
-        <h3 className="text-sm font-semibold text-gray-800 mb-2">About this practice</h3>
-        <p className="text-sm text-gray-600 leading-relaxed">{session.description}</p>
-      </div>
-
-      {/* Step guide */}
-      <div className="rounded-2xl p-5 mb-6"
-        style={{ background: '#f8f6ff', border: '1px solid #e5e7eb' }}>
-        <h3 className="text-sm font-semibold text-gray-800 mb-4">Muscle group sequence</h3>
-        <div className="space-y-3">
-          {steps.map((step, i) => (
-            <div key={i} className="flex gap-3">
-              <div
-                className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white mt-0.5"
-                style={{ background: '#7c3aed' }}
-              >
-                {i + 1}
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-800">{step.muscle}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{step.instruction}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Completion message */}
-      <AnimatePresence>
-        {completed && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl p-5 text-center mb-6"
-            style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '1px solid #bbf7d0' }}
-          >
-            <div className="text-3xl mb-2">🌿</div>
-            <h3 className="font-semibold text-green-800 mb-1">Session complete</h3>
-            <p className="text-sm text-green-700">Your body has been heard and released. Rest in this stillness for a moment.</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Tips */}
-      <div className="rounded-2xl p-5"
-        style={{ background: '#fffbeb', border: '1px solid #fde68a' }}>
-        <h3 className="text-sm font-semibold text-amber-800 mb-3">Tips for best results</h3>
-        <ul className="space-y-1.5">
-          {[
-            'Lie down or sit in a comfortable chair',
-            'Find a quiet space where you won\'t be disturbed',
-            'Remove glasses or contacts if comfortable',
-            'Practice daily for 2 weeks to see lasting results',
-            'Best done before sleep or after a stressful event',
-          ].map((tip, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs text-amber-700">
-              <span className="mt-0.5">✦</span>
-              <span>{tip}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-const MeditationPageInner = () => {
+function MeditationPageInner() {
   const { user } = useAuth();
   const [meditations, setMeditations] = useState<Meditation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -277,57 +41,101 @@ const MeditationPageInner = () => {
     void loadMeditations();
   }, [user, loadMeditations]);
 
-  const displayName = useMemo(() => {
-    if (!user) return 'traveler';
-    return user.username ?? user.fullName ?? user.email?.split('@')[0] ?? 'traveler';
-  }, [user]);
-
-  const theme = getTheme('mindfulness');
+  const session = meditations[0] ?? null;
 
   return (
     <ZenFocusMode title="Mindfulness Studio">
-      <ModulePage theme={theme}>
-        <ZenPage atmosphere="none" className="min-h-dvh pt-8 pb-32 md:pt-16 md:pb-16">
-        <ZenSoundscapeBar />
-        <ZenContainer maxWidth="xl" className={cn('py-8 md:pl-56')}>
-          <ZenSection>
-            <header className="text-center mb-6">
-              <p className="zen-label text-zen-secondary">Guided stillness for {displayName}</p>
-              <h1 className="zen-h1 text-zen-fg mt-2">Find your inner peace</h1>
-              <p className="mt-3 max-w-4xl mx-auto zen-body text-zen-fg-muted">
-                Choose a guided practice or layer ambient sounds for the atmosphere you need.
-              </p>
-            </header>
-          </ZenSection>
+      <ZenPage
+        atmosphere="home"
+        className={cn(
+          'relative min-h-dvh overflow-x-hidden',
+          'bg-[hsl(40,35%,99%)]',
+          'pt-20 pb-16 md:pt-24 md:pb-20',
+        )}
+      >
+        {/* Subtle lavender/blue atmosphere — not full-page purple */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(ellipse 900px 480px at 15% 0%, hsl(262 40% 72% / 0.12), transparent 60%), radial-gradient(ellipse 700px 400px at 90% 20%, hsl(210 55% 70% / 0.1), transparent 55%), radial-gradient(ellipse 600px 360px at 50% 100%, hsl(40 40% 92% / 0.5), transparent 50%)',
+            }}
+          />
+        </div>
+
+        <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
+          <header className="mx-auto max-w-3xl text-center">
+            <p className="font-ui text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-zen-secondary md:text-[0.75rem]">
+              Guided stillness
+            </p>
+            <h1
+              className={cn(
+                'mt-3 font-display font-medium text-zen-fg',
+                'text-[1.875rem] leading-[1.15] tracking-[-0.02em]',
+                'sm:text-[2.5rem] md:text-[3rem] lg:text-[3.25rem]',
+              )}
+            >
+              Find your inner peace
+            </h1>
+            <p className="mx-auto mt-4 max-w-xl font-ui text-[0.9375rem] leading-relaxed text-zen-fg-muted md:text-[1.0625rem]">
+              A few quiet minutes to slow down and release tension.
+            </p>
+          </header>
 
           {error ? (
-            <ZenSection>
-              <div className="max-w-3xl mx-auto rounded-zen-xl border border-zen-danger/25 bg-zen-danger-soft px-6 py-4 text-center text-zen-danger">
-                <p className="mb-4">{error}</p>
-                <ZenButton variant="outline" onClick={loadMeditations}>
-                  Try again
-                </ZenButton>
-              </div>
-            </ZenSection>
+            <div className="mx-auto mt-10 max-w-lg rounded-zen-xl border border-zen-danger/20 bg-zen-danger-soft/40 px-5 py-4 text-center">
+              <p className="font-ui text-sm text-zen-danger">{error}</p>
+              <ZenButton variant="outline" className="mt-4" onClick={loadMeditations}>
+                Try again
+              </ZenButton>
+            </div>
           ) : null}
 
-          <ZenSection>
+          <div className="mt-10 md:mt-12">
             {loading ? (
-              <div className="text-center text-zen-fg-muted py-20">Loading session...</div>
-            ) : meditations.length > 0 ? (
-              <JPMRPlayer session={meditations[0]} />
+              <div className="rounded-zen-2xl border border-zen-border-soft bg-white/60 px-6 py-20 text-center font-ui text-zen-fg-muted">
+                Loading session…
+              </div>
+            ) : session ? (
+              <PracticeCard session={session} />
             ) : (
-              <div className="rounded-zen-xl border border-dashed border-zen-secondary/30 bg-zen-secondary-soft px-8 py-12 text-center text-zen-secondary">
+              <div className="rounded-zen-2xl border border-dashed border-zen-border bg-white/50 px-6 py-16 text-center font-ui text-zen-fg-muted">
                 No guided meditations are available yet. Check back soon.
               </div>
             )}
-          </ZenSection>
-          </ZenContainer>
-        </ZenPage>
-      </ModulePage>
+          </div>
+
+          <div className="mt-6 md:mt-8">
+            <AtmosphereControl />
+          </div>
+
+          {session ? (
+            <>
+              <div className="mt-12 grid gap-10 md:mt-16 md:grid-cols-2 md:gap-12 lg:gap-16">
+                <section className="min-w-0">
+                  <h2 className="font-display text-[1.25rem] leading-tight tracking-[-0.01em] text-zen-fg md:text-[1.5rem]">
+                    About this practice
+                  </h2>
+                  <p className="mt-3 font-ui text-[0.9375rem] leading-relaxed text-zen-fg-muted md:text-[1.0625rem]">
+                    {session.description?.trim() ||
+                      "Jacobson's Progressive Muscle Relaxation guides you through systematically tensing and releasing each muscle group so the body can settle into stillness."}
+                  </p>
+                </section>
+
+                <SequenceTimeline />
+              </div>
+
+              <div className="mt-10 md:mt-12">
+                <TipsDisclosure />
+              </div>
+            </>
+          ) : null}
+        </div>
+      </ZenPage>
     </ZenFocusMode>
   );
-};
+}
 
 export default function MeditationPage() {
   return (
