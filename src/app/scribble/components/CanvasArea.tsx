@@ -15,8 +15,10 @@ export default function CanvasArea({ selectedSticker }: CanvasAreaProps) {
   const transformerRef = useRef<Konva.Transformer>(null);
   const activeTool = useToolStore((state) => state.activeTool);
   const color = useToolStore((state) => state.color);
-  const brushSize = useToolStore((state) => state.brushSize);
-  const opacity = useToolStore((state) => state.opacity);
+  const penSize = useToolStore((state) => state.penSize);
+  const penOpacity = useToolStore((state) => state.penOpacity);
+  const eraserSize = useToolStore((state) => state.eraserSize);
+  const eraserOpacity = useToolStore((state) => state.eraserOpacity);
   const gridEnabled = useToolStore((state) => state.gridEnabled);
   const gridSize = useToolStore((state) => state.gridSize);
   const fillColor = useToolStore((state) => state.fillColor);
@@ -25,7 +27,6 @@ export default function CanvasArea({ selectedSticker }: CanvasAreaProps) {
   const textFontStyle = useToolStore((state) => state.textFontStyle);
   const textFontWeight = useToolStore((state) => state.textFontWeight);
   const zoom = useToolStore((state) => state.zoom);
-  const darkMode = useToolStore((state) => state.darkMode);
 
 
   const elements = useCanvasStore((state) => state.elements);
@@ -38,9 +39,12 @@ export default function CanvasArea({ selectedSticker }: CanvasAreaProps) {
   const selectedElement = useCanvasStore((state) => state.selectedElement);
   const deleteElement = useCanvasStore((state) => state.deleteElement);
   const duplicateElement = useCanvasStore((state) => state.duplicateElement);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const drawingRef = useRef(false);
+  const startPosRef = useRef({ x: 0, y: 0 });
   const [drawing, setDrawing] = useState(false);
-  const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  /** 0×0 until container is measured — Stage mounts only when ready. */
+  const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
   const [textInput, setTextInput] = useState("");
   const [isTextEditing, setIsTextEditing] = useState(false);
 
@@ -51,17 +55,40 @@ export default function CanvasArea({ selectedSticker }: CanvasAreaProps) {
     fontWeight: "normal",
   });
 
+  /** Pointer in drawing-space coords (accounts for Konva stage zoom). */
+  const getDrawPos = useCallback(() => {
+    const stage = stageRef.current;
+    if (!stage) return null;
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return null;
+    const scale = stage.scaleX() || 1;
+    return { x: pointer.x / scale, y: pointer.y / scale };
+  }, []);
+
   useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
     const updateSize = () => {
-      setStageSize({
-        width: window.innerWidth * 0.8,
-        height: window.innerHeight * 0.8,
-      });
+      const rect = el.getBoundingClientRect();
+      const width = Math.floor(rect.width);
+      const height = Math.floor(rect.height);
+      // Ignore collapsed frames (flex % height not resolved yet).
+      if (width < 2 || height < 2) return;
+      setStageSize((prev) =>
+        prev.width === width && prev.height === height ? prev : { width, height },
+      );
     };
 
     updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
+    // rAF: first mobile layout often settles after paint.
+    const raf = window.requestAnimationFrame(updateSize);
+    const ro = new ResizeObserver(updateSize);
+    ro.observe(el);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
   }, []);
 
   useEffect(() => {
@@ -79,8 +106,16 @@ export default function CanvasArea({ selectedSticker }: CanvasAreaProps) {
     }
   }, [selectedElement, activeTool, elements.length]);
 
-  const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    const pos = stageRef.current?.getPointerPosition();
+  const setIsDrawing = (value: boolean) => {
+    drawingRef.current = value;
+    setDrawing(value);
+  };
+
+  const handlePointerDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent | PointerEvent>) => {
+    // Stop page scroll / browser gestures while drawing on the stage.
+    e.evt.preventDefault();
+
+    const pos = getDrawPos();
     if (!pos) return;
 
     const clickedOnEmpty = e.target === e.target.getStage();
@@ -99,28 +134,28 @@ export default function CanvasArea({ selectedSticker }: CanvasAreaProps) {
     }
 
     if (activeTool === "Draw") {
-      setDrawing(true);
+      setIsDrawing(true);
       addElement({
         type: "line",
         points: [pos.x, pos.y],
         color,
-        strokeWidth: brushSize,
-        opacity,
+        strokeWidth: penSize,
+        opacity: penOpacity,
         id: `line-${Date.now()}`,
       });
     } else if (activeTool === "Erase") {
-      setDrawing(true);
+      setIsDrawing(true);
       addElement({
         type: "eraser",
         points: [pos.x, pos.y],
         color: "#ffffff",
-        strokeWidth: brushSize,
-        opacity: 1,
+        strokeWidth: eraserSize,
+        opacity: eraserOpacity,
         id: `eraser-${Date.now()}`,
       });
     } else if (activeTool === "Rectangle") {
-      setDrawing(true);
-      setStartPos(pos);
+      setIsDrawing(true);
+      startPosRef.current = pos;
       addElement({
         type: "rect",
         points: [],
@@ -134,8 +169,8 @@ export default function CanvasArea({ selectedSticker }: CanvasAreaProps) {
         id: `rect-${Date.now()}`,
       });
     } else if (activeTool === "Circle") {
-      setDrawing(true);
-      setStartPos(pos);
+      setIsDrawing(true);
+      startPosRef.current = pos;
       addElement({
         type: "circle",
         points: [],
@@ -159,7 +194,7 @@ export default function CanvasArea({ selectedSticker }: CanvasAreaProps) {
         text: "",
         color,
         strokeWidth: 1,
-        fontSize: brushSize,
+        fontSize: penSize,
         fontFamily: textFontFamily,
         fontStyle: textFontStyle,
         fontWeight: textFontWeight,
@@ -167,7 +202,6 @@ export default function CanvasArea({ selectedSticker }: CanvasAreaProps) {
       });
       setSelectedElement(textId);
     } else if (activeTool === "Sticker" && selectedSticker) {
-      // Handle sticker placement
       addElement({
         type: "sticker",
         points: [],
@@ -181,35 +215,40 @@ export default function CanvasArea({ selectedSticker }: CanvasAreaProps) {
     }
   };
 
-  const handleMouseMove = (_e: Konva.KonvaEventObject<MouseEvent>) => {
-    const pos = stageRef.current?.getPointerPosition();
+  const handlePointerMove = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent | PointerEvent>) => {
+    e.evt.preventDefault();
+    if (!drawingRef.current) return;
+
+    const pos = getDrawPos();
     if (!pos) return;
 
-    if ((activeTool === "Draw" || activeTool === "Erase") && drawing) {
-      const lastElement = elements[elements.length - 1];
-      if (lastElement) {
-        const newPoints = [...lastElement.points, pos.x, pos.y];
-        updateLastElement(newPoints);
-      }
-    } else if (activeTool === "Rectangle" && drawing && elements.length > 0) {
-      const lastIndex = elements.length - 1;
-      const width = pos.x - startPos.x;
-      const height = pos.y - startPos.y;
-      updateElement(lastIndex, { width, height });
-    } else if (activeTool === "Circle" && drawing && elements.length > 0) {
-      const lastIndex = elements.length - 1;
-      const dx = pos.x - startPos.x;
-      const dy = pos.y - startPos.y;
-      const radius = Math.sqrt(dx * dx + dy * dy);
-      updateElement(lastIndex, { radius });
+    // Read store synchronously — React `elements` / `drawing` lag behind touchmove.
+    const storeElements = useCanvasStore.getState().elements;
+    const lastIndex = storeElements.length - 1;
+    const lastElement = storeElements[lastIndex];
+    if (!lastElement) return;
+
+    if (activeTool === "Draw" || activeTool === "Erase") {
+      updateLastElement([...lastElement.points, pos.x, pos.y]);
+    } else if (activeTool === "Rectangle") {
+      const start = startPosRef.current;
+      updateElement(lastIndex, {
+        width: pos.x - start.x,
+        height: pos.y - start.y,
+      });
+    } else if (activeTool === "Circle") {
+      const start = startPosRef.current;
+      const dx = pos.x - start.x;
+      const dy = pos.y - start.y;
+      updateElement(lastIndex, { radius: Math.sqrt(dx * dx + dy * dy) });
     }
   };
 
-  const handleMouseUp = () => {
-    if (drawing) {
+  const handlePointerUp = () => {
+    if (drawingRef.current) {
       useCanvasStore.getState().saveToHistory();
     }
-    setDrawing(false);
+    setIsDrawing(false);
   };
 
   const handleKeyDown = useCallback(
@@ -320,160 +359,161 @@ export default function CanvasArea({ selectedSticker }: CanvasAreaProps) {
   });
 
   return (
-    <div className="flex flex-1 justify-center items-center h-[calc(100dvh-8rem)] md:h-[calc(100dvh-4rem)] touch-none overflow-hidden">
-      <div
-        className={`rounded-2xl shadow-lg relative w-[90vw] h-[calc(90dvh-8rem)] md:h-[calc(90vh-4rem)] ${darkMode ? "bg-gray-800" : "bg-gradient-to-br from-blue-50 to-purple-50"}`}
-        style={{
-          backgroundImage: darkMode
-            ? "none"
-            : `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f3f4f6' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      >
-        <Stage
-          width={stageSize.width * zoom}
-          height={stageSize.height * zoom}
-          ref={stageRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onTouchStart={handleMouseDown as unknown as (e: Konva.KonvaEventObject<TouchEvent>) => void}
-          onTouchMove={handleMouseMove as unknown as (e: Konva.KonvaEventObject<TouchEvent>) => void}
-          onTouchEnd={handleMouseUp}
-          onPointerDown={handleMouseDown as unknown as (e: Konva.KonvaEventObject<PointerEvent>) => void}
-          onPointerMove={handleMouseMove as unknown as (e: Konva.KonvaEventObject<PointerEvent>) => void}
-          onPointerUp={handleMouseUp}
-          style={{
-            cursor: getCursor(),
-            transform: `scale(${zoom})`,
-            transformOrigin: "top left",
-            touchAction: "none",
-          }}
+    <div
+      ref={containerRef}
+      className="relative h-full w-full min-h-0 touch-none overflow-hidden rounded-zen-2xl border border-zen-border-soft/60 bg-[hsl(40,40%,99%)] shadow-[0_8px_28px_-18px_rgba(30,41,90,0.12)]"
+      style={{ touchAction: "none" }}
+      aria-label="Scribble drawing canvas"
+      role="application"
+    >
+      {elements.length === 0 && !drawing ? (
+        <p
+          className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center font-ui text-sm text-zen-fg-subtle"
+          aria-hidden="true"
         >
-          <Layer>
-            {renderGrid()}
-            {elements.map((element, _idx) => {
-              const _isSelected = selectedElement === element.id;
-              if (element.type === "line") {
-                return (
-                  <Line
-                    key={element.id}
-                    id={element.id}
-                    points={element.points}
-                    stroke={element.color}
-                    strokeWidth={element.strokeWidth}
-                    opacity={element.opacity}
-                    tension={0.5}
-                    lineCap="round"
-                    lineJoin="round"
-                    {...getCommonProps(element)}
-                  />
-                );
-              } else if (element.type === "eraser") {
-                return (
-                  <Line
-                    key={element.id}
-                    id={element.id}
-                    points={element.points}
-                    stroke={element.color}
-                    strokeWidth={element.strokeWidth}
-                    opacity={element.opacity}
-                    tension={0.5}
-                    lineCap="round"
-                    lineJoin="round"
-                    globalCompositeOperation="destination-out"
-                    {...getCommonProps(element)}
-                  />
-                );
-              } else if (element.type === "rect") {
-                return (
-                  <Rect
-                    key={element.id}
-                    id={element.id}
-                    
-                    width={element.width}
-                    height={element.height}
-                    stroke={element.color}
-                    strokeWidth={element.strokeWidth}
-                    fill={element.fill}
-                    {...getCommonProps(element)}
-                  />
-                );
-              } else if (element.type === "circle") {
-                return (
-                  <Circle
-                    key={element.id}
-                    id={element.id}
-                    
-                    radius={element.radius}
-                    stroke={element.color}
-                    strokeWidth={element.strokeWidth}
-                    fill={element.fill}
-                    {...getCommonProps(element)}
-                  />
-                );
-              } else if (element.type === "text") {
-                return (
-                  <Text
-                    key={element.id}
-                    id={element.id}
-                    
-                    text={element.text || "Click to edit"}
-                    fontSize={element.fontSize}
-                    fontFamily={element.fontFamily}
-                    fill={element.color}
-                    {...getCommonProps(element)}
-                    onDblClick={() => {
-                      setIsTextEditing(true);
-                      setTextInput(element.text || "");
-                      setSelectedElement(element.id);
-                    }}
-                  />
-                );
-              } else if (element.type === "sticker") {
-                // Render sticker as emoji based on name
-                const getEmoji = (name: string) => {
-                  const emojiMap: { [key: string]: string } = {
-                    smile: "😊",
-                    heart: "❤️",
-                    star: "⭐",
-                    zap: "⚡",
-                    sun: "☀️",
-                    moon: "🌙",
-                    cloud: "☁️",
-                    cute_face: "🥰",
-                    love: "💖",
-                    sparkle: "✨",
+          Start anywhere.
+        </p>
+      ) : null}
+      <div className="absolute inset-0 overflow-hidden" style={{ touchAction: "none" }}>
+        {stageSize.width > 0 && stageSize.height > 0 ? (
+          <Stage
+            width={stageSize.width}
+            height={stageSize.height}
+            scaleX={zoom}
+            scaleY={zoom}
+            ref={stageRef}
+            // Pointer events cover mouse, touch, and stylus — avoid dual touch+pointer handlers.
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            style={{
+              cursor: getCursor(),
+              touchAction: "none",
+              display: "block",
+            }}
+          >
+            <Layer>
+              {renderGrid()}
+              {elements.map((element, _idx) => {
+                const _isSelected = selectedElement === element.id;
+                if (element.type === "line") {
+                  return (
+                    <Line
+                      key={element.id}
+                      id={element.id}
+                      points={element.points}
+                      stroke={element.color}
+                      strokeWidth={element.strokeWidth}
+                      opacity={element.opacity}
+                      tension={0.5}
+                      lineCap="round"
+                      lineJoin="round"
+                      {...getCommonProps(element)}
+                    />
+                  );
+                } else if (element.type === "eraser") {
+                  return (
+                    <Line
+                      key={element.id}
+                      id={element.id}
+                      points={element.points}
+                      stroke={element.color}
+                      strokeWidth={element.strokeWidth}
+                      opacity={element.opacity}
+                      tension={0.5}
+                      lineCap="round"
+                      lineJoin="round"
+                      globalCompositeOperation="destination-out"
+                      {...getCommonProps(element)}
+                    />
+                  );
+                } else if (element.type === "rect") {
+                  return (
+                    <Rect
+                      key={element.id}
+                      id={element.id}
+                      width={element.width}
+                      height={element.height}
+                      stroke={element.color}
+                      strokeWidth={element.strokeWidth}
+                      fill={element.fill}
+                      {...getCommonProps(element)}
+                    />
+                  );
+                } else if (element.type === "circle") {
+                  return (
+                    <Circle
+                      key={element.id}
+                      id={element.id}
+                      radius={element.radius}
+                      stroke={element.color}
+                      strokeWidth={element.strokeWidth}
+                      fill={element.fill}
+                      {...getCommonProps(element)}
+                    />
+                  );
+                } else if (element.type === "text") {
+                  return (
+                    <Text
+                      key={element.id}
+                      id={element.id}
+                      text={element.text || "Click to edit"}
+                      fontSize={element.fontSize}
+                      fontFamily={element.fontFamily}
+                      fill={element.color}
+                      {...getCommonProps(element)}
+                      onDblClick={() => {
+                        setIsTextEditing(true);
+                        setTextInput(element.text || "");
+                        setSelectedElement(element.id);
+                      }}
+                    />
+                  );
+                } else if (element.type === "sticker") {
+                  const getEmoji = (name: string) => {
+                    const emojiMap: { [key: string]: string } = {
+                      smile: "😊",
+                      heart: "❤️",
+                      star: "⭐",
+                      zap: "⚡",
+                      sun: "☀️",
+                      moon: "🌙",
+                      cloud: "☁️",
+                      cute_face: "🥰",
+                      love: "💖",
+                      sparkle: "✨",
+                    };
+                    return emojiMap[name] || "😊";
                   };
-                  return emojiMap[name] || "😊";
-                };
-                return (
-                  <Text
-                    key={element.id}
-                    id={element.id}
-                    
-                    text={getEmoji(element.stickerName || "smile")}
-                    fontSize={32}
-                    fill={element.color}
-                    {...getCommonProps(element)}
-                  />
-                );
-              }
+                  return (
+                    <Text
+                      key={element.id}
+                      id={element.id}
+                      text={getEmoji(element.stickerName || "smile")}
+                      fontSize={32}
+                      fill={element.color}
+                      {...getCommonProps(element)}
+                    />
+                  );
+                }
 
-              return null;
-            })}
-            {selectedElement && (
-              <Transformer
-                ref={transformerRef}
-                boundBoxFunc={(oldBox, newBox) => {
-                  if (newBox.width < 5 || newBox.height < 5) {
-                    return oldBox;
-                  }
-                  return newBox;
-                }}
-              />
-            )}
-          </Layer>
-        </Stage>
+                return null;
+              })}
+              {selectedElement && (
+                <Transformer
+                  ref={transformerRef}
+                  boundBoxFunc={(oldBox, newBox) => {
+                    if (newBox.width < 5 || newBox.height < 5) {
+                      return oldBox;
+                    }
+                    return newBox;
+                  }}
+                />
+              )}
+            </Layer>
+          </Stage>
+        ) : null}
         {isTextEditing && selectedElement && (
           <input
             type="text"
@@ -489,7 +529,7 @@ export default function CanvasArea({ selectedSticker }: CanvasAreaProps) {
                 setIsTextEditing(false);
               }
             }}
-            className="absolute top-4 left-4 bg-white border border-gray-300 rounded px-2 py-1 z-10"
+            className="absolute top-4 left-4 z-10 rounded-zen-md border border-zen-border bg-zen-surface px-2 py-1 font-ui text-sm"
           />
         )}
       </div>

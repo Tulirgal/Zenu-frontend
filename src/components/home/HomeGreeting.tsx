@@ -26,7 +26,7 @@ export type HomePandaPresentation = {
 
 /**
  * One mobile composition: greeting copy + Panda in shared atmosphere.
- * Desktop stays text-only (hero Panda lives in recommendation).
+ * Desktop stays text-only (atmospheric Panda lives in HomeAtmospherePanda).
  */
 export function HomeGreeting({
   displayName,
@@ -47,7 +47,7 @@ export function HomeGreeting({
         className,
       )}
     >
-      {/* Shared soft field — ties text + Panda into one environment */}
+      {/* Shared soft field — ties text + Panda into one environment (mobile) */}
       <div
         className="pointer-events-none absolute -right-6 -top-4 h-36 w-44 md:hidden"
         aria-hidden="true"
@@ -67,13 +67,13 @@ export function HomeGreeting({
 
       <div className="relative grid grid-cols-[minmax(0,1fr)_6.25rem] items-end gap-0 md:grid-cols-1">
         <div className="min-w-0 relative z-10 pb-0.5 pr-1">
-          <p className="font-ui text-[0.8125rem] font-medium tracking-tight text-zen-secondary mb-2.5 md:zen-eyebrow md:mb-3">
+          <p className="font-ui text-[0.8125rem] font-medium tracking-tight text-zen-secondary mb-2.5 md:text-[0.9375rem] md:mb-3.5">
             {greeting}, {displayName}
           </p>
-          <h1 className="font-display text-[1.55rem] leading-[1.16] tracking-[-0.03em] font-semibold text-zen-fg md:zen-home-display md:text-[2.35rem]">
+          <h1 className="font-display text-[1.55rem] leading-[1.16] tracking-[-0.03em] font-semibold text-zen-fg md:zen-home-display md:font-bold">
             You&apos;re safe here.
           </h1>
-          <p className="font-ui text-[0.875rem] leading-relaxed text-zen-fg-muted mt-2.5 max-w-[15.5rem] md:max-w-xl md:zen-body md:mt-3">
+          <p className="font-ui text-[0.875rem] leading-relaxed text-zen-fg-muted mt-2.5 max-w-[15.5rem] md:mt-3.5 md:max-w-xl md:text-[1.0625rem] md:leading-relaxed">
             Let&apos;s take a gentle step today.
           </p>
         </div>

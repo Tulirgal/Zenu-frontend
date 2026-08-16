@@ -153,16 +153,16 @@ function SpaceMark({ identity, compact }: { identity: string; compact?: boolean 
 export function HomeYourSpace({ className }: { className?: string }) {
   return (
     <section className={cn('zen-home-section', className)} aria-labelledby="home-space-heading">
-      <div className="flex items-baseline justify-between gap-3 mb-4 md:mb-5">
+      <div className="flex items-baseline justify-between gap-3 mb-4 md:mb-6">
         <h2
           id="home-space-heading"
-          className="font-ui text-[0.9375rem] font-medium text-zen-fg md:text-lg"
+          className="font-ui text-[0.9375rem] font-semibold text-zen-fg md:text-[1.25rem]"
         >
           Your wellness space
         </h2>
         <Link
           href="/bubbles"
-          className="font-ui text-[0.8125rem] text-zen-secondary hover:text-zen-fg transition-colors focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2 rounded-sm"
+          className="font-ui text-[0.8125rem] md:text-[0.9375rem] text-zen-secondary hover:text-zen-fg transition-colors focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2 rounded-sm"
         >
           Explore all →
         </Link>
@@ -173,7 +173,7 @@ export function HomeYourSpace({ className }: { className?: string }) {
           'flex gap-3 overflow-x-auto pb-2 -mx-4 pl-4 pr-6 snap-x snap-mandatory',
           '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
           'md:mx-0 md:px-0 md:pr-0 md:overflow-visible md:pb-0 md:snap-none',
-          'md:grid md:grid-cols-3 lg:grid-cols-6 md:gap-3 xl:gap-3.5',
+          'md:grid md:grid-cols-3 lg:grid-cols-6 md:gap-3.5 lg:gap-4',
         )}
       >
         {SPACE_ITEMS.map((item) => (
@@ -187,8 +187,8 @@ export function HomeYourSpace({ className }: { className?: string }) {
               'active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2',
               // Mobile rail — ~2.5 cards visible on 390–430
               'shrink-0 w-[8.25rem] snap-start p-3.5 min-h-[8.5rem]',
-              // Desktop — six equal columns from lg (1280 content width)
-              'md:w-auto md:min-h-[10.25rem] md:p-4 md:shrink',
+              // Desktop — wider cards with room for descriptions
+              'md:w-auto md:min-h-[11.5rem] md:p-5 md:shrink',
             )}
           >
             <div
@@ -199,10 +199,10 @@ export function HomeYourSpace({ className }: { className?: string }) {
               aria-hidden="true"
             />
             <div className="relative z-10 flex h-full flex-col">
-              <h3 className="font-ui text-[0.8125rem] font-medium text-zen-fg tracking-tight leading-snug">
+              <h3 className="font-ui text-[0.8125rem] font-semibold text-zen-fg tracking-tight leading-snug md:text-[1.0625rem]">
                 {item.title}
               </h3>
-              <p className="hidden md:block font-ui text-[0.75rem] text-zen-fg-muted mt-1.5 leading-snug line-clamp-2">
+              <p className="hidden md:block font-ui text-[0.875rem] text-zen-fg-muted mt-2 leading-snug line-clamp-2">
                 {item.description}
               </p>
               <div className={cn('mt-auto pt-4 flex items-end justify-between', item.accentClass)}>

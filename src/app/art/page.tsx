@@ -1,29 +1,72 @@
 'use client';
-import { useEffect, useRef, useState } from "react";
-import Link from 'next/link';
-import { ArrowLeft, Undo2, Redo2, Trash2, Download, Pencil, Eraser, Paintbrush } from "lucide-react";
-import { toast } from "sonner";
-import { trackEngagement } from '@/lib/signals';
-import ModulePage from '@/components/ui/ModulePage';
-import { getTheme } from '@/lib/moduleThemes';
 
-const DoodleDreams = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [activeTool, setActiveTool] = useState<'draw' | 'eraser' | 'fill'>('draw');
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { trackEngagement } from '@/lib/signals';
+import { cn } from '@/lib/utils';
+import { DoodleHeader } from './components/DoodleHeader';
+import { DoodleCompanion } from './components/DoodleCompanion';
+import { DesktopToolKit } from './components/DesktopToolKit';
+import { MobileToolKit } from './components/MobileToolKit';
+import {
+  SymmetryCanvas,
+  type DoodleTool,
+  type SymmetryCanvasHandle,
+} from './components/SymmetryCanvas';
+
+/** Local zoom for Doodle view — does not alter symmetry math (pointer uses getBoundingClientRect). */
+function DoodleZoomPill({
+  zoom,
+  setZoom,
+}: {
+  zoom: number;
+  setZoom: (z: number) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        'inline-flex items-center gap-1 rounded-zen-full border border-zen-border-soft/70',
+        'bg-zen-surface/90 backdrop-blur-md px-1.5 py-1',
+        'shadow-[0_6px_18px_-12px_rgba(30,41,90,0.18)]',
+      )}
+    >
+      <button
+        type="button"
+        onClick={() => setZoom(Math.max(zoom - 0.1, 0.5))}
+        className="inline-flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-full text-zen-fg-muted hover:bg-zen-bg-subtle hover:text-zen-fg active:scale-[0.97]"
+        aria-label="Zoom out"
+      >
+        −
+      </button>
+      <span className="font-ui text-xs font-medium text-zen-fg min-w-[3rem] text-center tabular-nums">
+        {Math.round(zoom * 100)}%
+      </span>
+      <button
+        type="button"
+        onClick={() => setZoom(Math.min(zoom + 0.1, 2))}
+        className="inline-flex h-10 w-10 min-h-10 min-w-10 items-center justify-center rounded-full text-zen-fg-muted hover:bg-zen-bg-subtle hover:text-zen-fg active:scale-[0.97]"
+        aria-label="Zoom in"
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+export default function DoodleDreamsPage() {
+  const canvasRef = useRef<SymmetryCanvasHandle>(null);
+  const [tool, setTool] = useState<DoodleTool>('draw');
+  const [color, setColor] = useState('#5C4B8A');
   const [brushSize, setBrushSize] = useState(5);
   const [eraserSize, setEraserSize] = useState(20);
-  const [color, setColor] = useState("#ff4081");
+  const [showGuides, setShowGuides] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-
-  const undoStackRef = useRef<string[]>([]);
-  const redoStackRef = useRef<string[]>([]);
-  const isDrawingRef = useRef(false);
-  const lastPosRef = useRef({ x: 0, y: 0 });
-
-  const symmetry = 12;
-  const angleStep = (2 * Math.PI) / symmetry;
-  const MAX_STACK = 25;
+  const [strokeCount, setStrokeCount] = useState(0);
+  const [savedPulse, setSavedPulse] = useState(0);
+  const [savedToast, setSavedToast] = useState(false);
+  const [completionOpen, setCompletionOpen] = useState(false);
+  const [viewZoom, setViewZoom] = useState(1);
+  const completionShown = useRef(false);
 
   useEffect(() => {
     trackEngagement('arts_mandala', 'opened');
@@ -34,469 +77,166 @@ const DoodleDreams = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Set canvas size with proper scaling for high-DPI displays
-    const updateCanvasSize = () => {
-      const container = canvas.parentElement;
-      if (container) {
-        const dpr = window.devicePixelRatio || 1;
-        const size = Math.min(container.clientWidth - 32, 700);
-        
-        canvas.style.width = `${size}px`;
-        canvas.style.height = `${size}px`;
-        canvas.width = size * dpr;
-        canvas.height = size * dpr;
-        
-        // Scale context to match device pixel ratio
-        ctx.scale(dpr, dpr);
-        
-        // Set white background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Enable anti-aliasing and smoothing
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-      }
-    };
-
-    updateCanvasSize();
-    window.addEventListener('resize', updateCanvasSize);
-
-    // Initial state
-    pushState();
-
-    return () => {
-      window.removeEventListener('resize', updateCanvasSize);
-    };
+  const onHistoryChange = useCallback((s: { canUndo: boolean; canRedo: boolean }) => {
+    setCanUndo(s.canUndo);
+    setCanRedo(s.canRedo);
   }, []);
 
-  const pushState = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    if (undoStackRef.current.length >= MAX_STACK) {
-      undoStackRef.current.shift();
+  const onStrokeCommit = useCallback((count: number) => {
+    setStrokeCount(count);
+    if (count >= 5 && !completionShown.current) {
+      completionShown.current = true;
+      setCompletionOpen(true);
     }
-    undoStackRef.current.push(canvas.toDataURL());
-    redoStackRef.current = [];
-    setCanUndo(true);
-    setCanRedo(false);
-  };
-
-  const restoreFromDataURL = (url: string) => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
-
-    const img = new Image();
-    img.onload = () => {
-      ctx.save();
-      ctx.resetTransform();
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      ctx.restore();
-    };
-    img.src = url;
-  };
-
-  const handleUndo = () => {
-    if (undoStackRef.current.length === 0) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    redoStackRef.current.push(canvas.toDataURL());
-    const state = undoStackRef.current.pop()!;
-    restoreFromDataURL(state);
-    setCanUndo(undoStackRef.current.length > 0);
-    setCanRedo(true);
-    toast.success("Undone", { duration: 1000 });
-  };
-
-  const handleRedo = () => {
-    if (redoStackRef.current.length === 0) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    undoStackRef.current.push(canvas.toDataURL());
-    const state = redoStackRef.current.pop()!;
-    restoreFromDataURL(state);
-    setCanRedo(redoStackRef.current.length > 0);
-    setCanUndo(true);
-    toast.success("Redone", { duration: 1000 });
-  };
-
-  const handleClear = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
-
-    pushState();
-    ctx.save();
-    ctx.resetTransform();
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.restore();
-    toast.success("Canvas cleared");
-  };
+  }, []);
 
   const handleSave = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const link = document.createElement('a');
-    link.download = `mandala-${Date.now()}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    toast.success("Mandala saved!");
-  };
-
-  const drawSymmetricLine = (x1: number, y1: number, x2: number, y2: number, overrideColor?: string, overrideSize?: number) => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    const centerX = (canvas.width / dpr) / 2;
-    const centerY = (canvas.height / dpr) / 2;
-    const dx1 = x1 - centerX, dy1 = y1 - centerY;
-    const dx2 = x2 - centerX, dy2 = y2 - centerY;
-
-    ctx.strokeStyle = overrideColor || color;
-    ctx.lineWidth = overrideSize || brushSize;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.shadowBlur = 0;
-    ctx.globalCompositeOperation = 'source-over';
-
-    ctx.save();
-    ctx.translate(centerX, centerY);
-    for (let i = 0; i < symmetry; i++) {
-      ctx.rotate(angleStep);
-      ctx.beginPath();
-      ctx.moveTo(dx1, dy1);
-      ctx.lineTo(dx2, dy2);
-      ctx.stroke();
-    }
-    ctx.restore();
-  };
-
-  const hexToRgba = (hex: string): [number, number, number, number] => {
-    const bigint = parseInt(hex.slice(1), 16);
-    return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255, 255];
-  };
-
-  const rotatePoint = (cx: number, cy: number, x: number, y: number, theta: number) => {
-    const dx = x - cx, dy = y - cy;
-    const c = Math.cos(theta), s = Math.sin(theta);
-    return [dx * c - dy * s + cx, dx * s + dy * c + cy];
-  };
-
-  const floodFill = (imgData: ImageData, startX: number, startY: number, fillRGBA: number[]) => {
-    const w = imgData.width, h = imgData.height;
-    const data = imgData.data;
-    const startIdx = (startY * w + startX) * 4;
-
-    if (startX < 0 || startY < 0 || startX >= w || startY >= h) return;
-
-    const target = Array.from(data.slice(startIdx, startIdx + 4));
-    if (target.every((v, i) => v === fillRGBA[i])) return;
-
-    const stack: [number, number][] = [[startX, startY]];
-    while (stack.length) {
-      const point = stack.pop();
-      if (!point) continue;
-      const [x, y] = point;
-      if (x < 0 || y < 0 || x >= w || y >= h) continue;
-
-      const idx = (y * w + x) * 4;
-      if (target.every((v, i) => Math.abs(data[idx + i] - v) <= 16)) {
-        data.set(fillRGBA, idx);
-        stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-      }
+    if (canvasRef.current?.save()) {
+      setSavedPulse((n) => n + 1);
+      setSavedToast(true);
+      window.setTimeout(() => setSavedToast(false), 1800);
+      setCompletionOpen(false);
     }
   };
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
-
-    pushState();
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / (window.devicePixelRatio || 1) / rect.width;
-    const scaleY = canvas.height / (window.devicePixelRatio || 1) / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
-
-    if (activeTool === 'fill') {
-      const dpr = window.devicePixelRatio || 1;
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      for (let i = 0; i < symmetry; i++) {
-        const [rx, ry] = rotatePoint((canvas.width / dpr) / 2, (canvas.height / dpr) / 2, x, y, i * angleStep);
-        floodFill(imgData, Math.round(rx * dpr), Math.round(ry * dpr), hexToRgba(color));
-      }
-      ctx.putImageData(imgData, 0, 0);
-      return;
-    }
-
-    isDrawingRef.current = true;
-    lastPosRef.current = { x, y };
-
-    if (activeTool === 'eraser') {
-      drawSymmetricLine(x, y, x, y, '#ffffff', eraserSize);
-      return;
-    }
-
-    drawSymmetricLine(x, y, x, y);
+  const clearAll = () => {
+    canvasRef.current?.clear();
+    setStrokeCount(0);
+    completionShown.current = false;
+    setCompletionOpen(false);
   };
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawingRef.current) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / (window.devicePixelRatio || 1) / rect.width;
-    const scaleY = canvas.height / (window.devicePixelRatio || 1) / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
-
-    if (activeTool === 'eraser') {
-      drawSymmetricLine(lastPosRef.current.x, lastPosRef.current.y, x, y, '#ffffff', eraserSize);
-    } else {
-      drawSymmetricLine(lastPosRef.current.x, lastPosRef.current.y, x, y);
-    }
-    
-    lastPosRef.current = { x, y };
-  };
-
-  const handlePointerUp = () => {
-    isDrawingRef.current = false;
-  };
-
-  const theme = getTheme('doodle');
 
   return (
-    <ModulePage theme={theme}>
-      <div className="relative min-h-[calc(100dvh-4rem)]" data-zen-atmosphere="none" style={{ background: 'transparent' }}>
-      {/* Glass floating chrome — normal shell (nav remains) */}
-      <Link
-        href="/"
-        aria-label="Back to dashboard"
-        className="absolute top-6 left-6 lg:left-8 z-40 inline-flex items-center gap-2 px-3 py-2 rounded-zen-full bg-black/20 backdrop-blur-md border border-white/10 shadow-zen-floating text-sm font-medium text-white hover:bg-black/40 active:scale-[0.97] transition-all duration-zen-fast focus-visible:outline-2 focus-visible:outline-zen-primary"
-      >
-        <ArrowLeft className="w-4 h-4 text-white/70" aria-hidden="true" />
-        <span className="hidden sm:inline text-white/70">ZenU</span>
-        <span className="h-3 w-px bg-zen-border hidden sm:block" aria-hidden="true" />
-        <span>Art</span>
-      </Link>
+    <div
+      className={cn(
+        'flex flex-col w-full overflow-hidden bg-[hsl(40,35%,99%)]',
+        'max-md:absolute max-md:inset-0',
+        'max-md:pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))]',
+        'md:relative md:h-full md:min-h-0 md:flex-1',
+      )}
+      data-zen-atmosphere="home"
+    >
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div className="absolute -right-16 top-8 h-56 w-56 rounded-full bg-zen-secondary-soft opacity-45 blur-3xl" />
+        <div className="absolute -left-12 bottom-24 h-48 w-48 rounded-full bg-zen-emotion-surprise-soft opacity-30 blur-3xl" />
+      </div>
 
-      <div className="pt-8 pb-4 md:pt-10 md:pb-8">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h1 className="zen-h1 text-white font-serif tracking-wide mb-3">
-              Doodle Dreams Studio
-            </h1>
-            <p className="zen-body-sm text-white/70 max-w-2xl mx-auto">
-              12-fold symmetry mandala creator
-            </p>
+      <div className="relative z-10 flex flex-1 min-h-0 gap-2 md:gap-3 px-2 pt-3 pb-2 md:px-4 md:pt-4 md:pb-3">
+        <DesktopToolKit
+          tool={tool}
+          onToolChange={setTool}
+          color={color}
+          onColorChange={setColor}
+          brushSize={brushSize}
+          onBrushSizeChange={setBrushSize}
+          eraserSize={eraserSize}
+          onEraserSizeChange={setEraserSize}
+          showGuides={showGuides}
+          onToggleGuides={() => setShowGuides((v) => !v)}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={() => canvasRef.current?.undo()}
+          onRedo={() => canvasRef.current?.redo()}
+          onClear={clearAll}
+          onSave={handleSave}
+        />
+
+        <div className="relative flex flex-1 min-w-0 min-h-0 flex-col">
+          <div className="flex items-start justify-between gap-3 shrink-0 px-0.5">
+            <DoodleHeader />
+            <span className="mt-1 inline-flex items-center rounded-zen-full border border-zen-border-soft/70 bg-white/80 px-2.5 py-1 font-ui text-[0.6875rem] text-zen-fg-muted shrink-0">
+              12-fold symmetry
+            </span>
+          </div>
+
+          <div className="relative flex-1 min-h-0">
+            <div className="absolute inset-0 flex items-center justify-center pb-[4.75rem] md:pb-14">
+              <div
+                className="h-full w-full flex items-center justify-center"
+                style={{
+                  transform: viewZoom !== 1 ? `scale(${viewZoom})` : undefined,
+                  transformOrigin: 'center center',
+                }}
+              >
+                <SymmetryCanvas
+                  ref={canvasRef}
+                  tool={tool}
+                  color={color}
+                  brushSize={brushSize}
+                  eraserSize={eraserSize}
+                  showGuides={showGuides}
+                  onHistoryChange={onHistoryChange}
+                  onStrokeCommit={onStrokeCommit}
+                  className="h-full w-full"
+                />
+              </div>
+            </div>
+
+            <MobileToolKit
+              tool={tool}
+              onToolChange={setTool}
+              color={color}
+              onColorChange={setColor}
+              brushSize={brushSize}
+              onBrushSizeChange={setBrushSize}
+              eraserSize={eraserSize}
+              onEraserSizeChange={setEraserSize}
+              showGuides={showGuides}
+              onToggleGuides={() => setShowGuides((v) => !v)}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onUndo={() => canvasRef.current?.undo()}
+              onRedo={() => canvasRef.current?.redo()}
+              onClear={clearAll}
+              onSave={handleSave}
+              zoom={viewZoom}
+              onZoomChange={setViewZoom}
+            />
+
+            <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 hidden -translate-x-1/2 md:block">
+              <div className="pointer-events-auto">
+                <DoodleZoomPill zoom={viewZoom} setZoom={setViewZoom} />
+              </div>
+            </div>
+
+            <DoodleCompanion strokeCount={strokeCount} savedPulse={savedPulse} />
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 p-4 lg:p-8 max-w-[1200px] mx-auto items-center lg:items-start justify-center pb-24">
-        {/* Left Sidebar - Tools */}
-        <aside className="w-full lg:w-72 lg:sticky lg:top-24 space-y-4 shrink-0 flex flex-col">
-          {/* Tool Selection */}
-          <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-zen-xl p-3 shadow-zen-subtle">
-            <h3 className="zen-caption text-white mb-2">Tools</h3>
-            <div className="grid grid-cols-3 lg:grid-cols-1 gap-2">
-              <button
-                onClick={() => {
-                  setActiveTool('draw');
-                  toast.success("Pencil selected", { duration: 800 });
-                }}
-                className={`w-full flex items-center px-4 py-2 rounded-zen-md min-h-11 transition-all duration-zen-fast active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-zen-primary ${
-                  activeTool === 'draw' 
-                    ? 'bg-zen-primary text-white' 
-                    : 'border border-white/30 hover:border-white/60 text-white/80 hover:text-white'
-                }`}
-              >
-                <Pencil className="w-4 h-4 lg:mr-2" />
-                <span className="hidden lg:inline">Draw</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTool('eraser');
-                  toast.success("Eraser selected", { duration: 800 });
-                }}
-                className={`w-full flex items-center px-4 py-2 rounded-zen-md min-h-11 transition-all duration-zen-fast active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-zen-primary ${
-                  activeTool === 'eraser'
-                    ? 'bg-zen-primary text-white'
-                    : 'border border-white/30 hover:border-white/60 text-white/80 hover:text-white'
-                }`}
-              >
-                <Eraser className="w-4 h-4 lg:mr-2" />
-                <span className="hidden lg:inline">Eraser</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTool('fill');
-                  toast.success("Fill selected", { duration: 800 });
-                }}
-                className={`w-full flex items-center px-4 py-2 rounded-zen-md min-h-11 transition-all duration-zen-fast active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-zen-primary ${
-                  activeTool === 'fill'
-                    ? 'bg-zen-primary text-white'
-                    : 'border border-white/30 hover:border-white/60 text-white/80 hover:text-white'
-                }`}
-              >
-                <Paintbrush className="w-4 h-4 lg:mr-2" />
-                <span className="hidden lg:inline">Fill</span>
-              </button>
-            </div>
-          </div>
+      {savedToast ? (
+        <p
+          role="status"
+          className="pointer-events-none absolute top-4 left-1/2 z-40 -translate-x-1/2 rounded-zen-full border border-zen-border-soft bg-zen-surface px-4 py-2 font-ui text-sm text-zen-fg shadow-zen-elevated"
+        >
+          Saved.
+        </p>
+      ) : null}
 
-          {/* Color & Size Controls */}
-          <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-zen-xl p-3 space-y-3 shadow-zen-subtle">
-            <div>
-              <h3 className="zen-caption text-white mb-2 flex items-center gap-1.5">
-                <Paintbrush className="w-3.5 h-3.5" aria-hidden="true" />
-                Color
-              </h3>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={color}
-                  onChange={(e) => {
-                    setColor(e.target.value);
-                    toast.success("Color changed", { duration: 500 });
-                  }}
-                  className="w-16 h-16 rounded-lg cursor-pointer border-2 border-white/20 hover:border-zen-primary/50 transition-all duration-300 hover:scale-105 active:scale-95"
-                />
-                <div className="flex-1">
-                  <div className="text-[10px] text-white/60 font-mono bg-white/10 px-2 py-1.5 rounded">
-                    {color.toUpperCase()}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-2 border-t border-white/20">
-              <div>
-                <label className="text-[10px] font-medium text-white/80 flex items-center justify-between mb-1.5">
-                  <span className="flex items-center gap-1">
-                    <Pencil className="w-3 h-3" />
-                    Brush
-                  </span>
-                  <span className="text-zen-primary font-semibold">{brushSize}px</span>
-                </label>
-                <input
-                  type="range"
-                  value={brushSize}
-                  onChange={(e) => setBrushSize(Number(e.target.value))}
-                  min={1}
-                  max={40}
-                  step={1}
-                  className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-zen-bg-muted accent-zen-primary"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-medium text-white/80 flex items-center justify-between mb-1.5">
-                  <span className="flex items-center gap-1">
-                    <Eraser className="w-3 h-3" />
-                    Eraser
-                  </span>
-                  <span className="text-zen-primary font-semibold">{eraserSize}px</span>
-                </label>
-                <input
-                  type="range"
-                  value={eraserSize}
-                  onChange={(e) => setEraserSize(Number(e.target.value))}
-                  min={4}
-                  max={120}
-                  step={1}
-                  className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-zen-bg-muted accent-zen-primary"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-zen-xl p-3 space-y-2 shadow-zen-subtle">
-            <h3 className="zen-caption text-white mb-2">Actions</h3>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={handleUndo}
-                disabled={!canUndo}
-                aria-label="Undo"
-                className="w-full flex items-center justify-center px-4 py-2 rounded-zen-md min-h-11 bg-white/15 hover:bg-white/25 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-zen-fast active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-zen-primary"
-              >
-                <Undo2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
-                Undo
-              </button>
-              <button
-                onClick={handleRedo}
-                disabled={!canRedo}
-                aria-label="Redo"
-                className="w-full flex items-center justify-center px-4 py-2 rounded-zen-md min-h-11 bg-white/15 hover:bg-white/25 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-zen-fast active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-zen-primary"
-              >
-                <Redo2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
-                Redo
-              </button>
-            </div>
+      {completionOpen ? (
+        <div
+          className="absolute bottom-24 md:bottom-8 left-1/2 z-30 -translate-x-1/2 w-[min(92vw,22rem)] rounded-zen-2xl border border-zen-border-soft bg-white/95 px-4 py-3 shadow-zen-elevated backdrop-blur-md"
+          role="status"
+        >
+          <p className="font-ui text-sm text-zen-fg mb-2.5 text-center">Your pattern is yours.</p>
+          <div className="flex gap-2">
             <button
-              onClick={handleClear}
-              aria-label="Clear canvas"
-              className="w-full flex items-center justify-center px-4 py-2 rounded-zen-md min-h-11 bg-white/15 hover:bg-white/25 text-white transition-all duration-zen-fast active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-zen-primary"
+              type="button"
+              className="flex-1 min-h-11 rounded-zen-xl border border-zen-border-soft font-ui text-sm text-zen-fg-muted active:scale-[0.97]"
+              onClick={() => setCompletionOpen(false)}
             >
-              <Trash2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
-              Clear Canvas
+              Keep drawing
             </button>
             <button
+              type="button"
+              className="flex-1 min-h-11 rounded-zen-xl bg-zen-secondary-soft text-zen-secondary font-ui text-sm font-medium active:scale-[0.97]"
               onClick={handleSave}
-              aria-label="Save mandala"
-              className="w-full flex items-center justify-center px-4 py-2 rounded-zen-md min-h-11 bg-zen-primary text-white hover:bg-zen-primary-hover transition-all duration-zen-fast active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-zen-primary"
             >
-              <Download className="w-4 h-4 mr-1.5" aria-hidden="true" />
-              Save Mandala
+              Save
             </button>
           </div>
-
-          <div className="bg-white/10 border border-white/20 rounded-zen-xl p-3">
-            <p className="text-[10px] text-white/70 leading-relaxed">
-              <span className="font-semibold text-white">Tip:</span> Draw from the center outward for best results.
-            </p>
-          </div>
-        </aside>
-
-        <main className="flex-1 w-full max-w-[700px] flex items-center justify-center">
-          <div className="glass rounded-zen-2xl p-3 sm:p-4 lg:p-6 w-full shadow-zen-card h-fit">
-            <canvas
-              ref={canvasRef}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerLeave={handlePointerUp}
-              className="w-full rounded-zen-xl shadow-zen-subtle cursor-crosshair touch-none border-2 border-white/20"
-              style={{
-                aspectRatio: '1/1'
-              }}
-            />
-          </div>
-        </main>
-      </div>
-      </div>
-    </ModulePage>
+        </div>
+      ) : null}
+    </div>
   );
-};
-
-export default DoodleDreams;
+}

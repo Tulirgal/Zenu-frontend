@@ -124,6 +124,10 @@ const PATH_PRESENTATION: Array<{
 /** Routes where a floating companion would duplicate a dominant inline panda. */
 const COMPANION_DENY = [
   /^\/$/,
+  /^\/innercompass(\/|$)/,
+  /^\/scribble(\/|$)/,
+  /^\/art(\/|$)/,
+  /^\/bubbles(\/|$)/,
   /^\/dev\/panda(\/|$)/,
   /^\/chat(\/|$)/,
   /^\/signin(\/|$)/,

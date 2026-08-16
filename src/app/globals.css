@@ -287,20 +287,26 @@ body {
 
 /* Home editorial display — calmer than marketing display */
 .zen-home-display {
-  font-size: clamp(1.85rem, 3.6vw, 2.75rem);
+  font-size: clamp(1.85rem, 3.8vw, 3rem); /* ~40–48px on desktop */
   line-height: 1.12;
   letter-spacing: -0.03em;
-  font-weight: 600;
+  font-weight: 700;
   font-optical-sizing: auto;
 }
 
 .zen-eyebrow {
-  font-size: 0.6875rem;
+  font-size: 0.75rem; /* 12px */
   line-height: 1.4;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   font-weight: 600;
   text-transform: uppercase;
   font-family: var(--zen-font-ui);
+}
+
+@media (min-width: 768px) {
+  .zen-eyebrow {
+    font-size: 0.8125rem; /* 13px desktop */
+  }
 }
 
 .zen-h1 {

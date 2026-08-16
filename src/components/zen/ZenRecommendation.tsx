@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, Play } from 'lucide-react';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 import { getRecommendations, type RecommendationTodayResponse } from '@/lib/signals';
 import { setRecommendationLaunch } from '@/lib/recommendationAttribution';
 import { cn } from '@/lib/utils';
@@ -126,10 +126,10 @@ export function ZenRecommendation({
         className={cn(
           'relative z-10 h-full',
           'bg-zen-surface border border-zen-border-soft/55',
-          'shadow-[0_8px_28px_-18px_rgba(30,41,90,0.14)]',
-          'grid grid-cols-1 md:grid-cols-[1.35fr_0.85fr] md:items-center',
-          'px-4 py-5 sm:px-6 lg:px-8 lg:py-8',
-          'gap-3 md:gap-4',
+          'shadow-[0_8px_28px_-18px_rgba(30,41,90,0.12)]',
+          'grid grid-cols-1 md:grid-cols-[1.4fr_0.8fr] md:items-center',
+          'px-4 py-5 sm:px-6 md:px-8 md:py-8 lg:px-9 lg:py-9',
+          'gap-3 md:gap-5',
         )}
       >
         <AnimatePresence mode="wait">
@@ -141,49 +141,56 @@ export function ZenRecommendation({
             transition={{ duration: reducedMotion ? 0.12 : 0.28 }}
             className="min-w-0 relative"
           >
-            {/* Mobile atmosphere sits top-right of the hero, not empty glow */}
+            {/* Mobile atmosphere sits top-right of the hero — not the Home Panda */}
             <RecommendationAtmosphere
               compact
               moduleId={selected.module_id}
               className="pointer-events-none absolute -right-2 top-1 md:hidden"
             />
 
-            <p className="zen-eyebrow text-zen-secondary mb-2 md:mb-3">Today&apos;s focus</p>
+            <p className="zen-eyebrow text-zen-secondary mb-2.5 md:mb-3.5">
+              For you right now
+            </p>
+            <p className="font-ui text-[0.8125rem] leading-snug text-zen-fg-muted mb-3 max-w-[15.5rem] md:mb-4 md:max-w-lg md:text-[0.9375rem] md:leading-relaxed pr-16 md:pr-0">
+              {contextLine}
+            </p>
             <h2
               id="home-rec-heading"
-              className="font-display text-[1.375rem] sm:text-[1.65rem] lg:text-[1.85rem] leading-[1.18] tracking-tight text-zen-fg font-semibold pr-16 md:pr-0"
+              className="font-display text-[1.375rem] sm:text-[1.65rem] md:text-[1.875rem] lg:text-[2rem] leading-[1.18] tracking-tight text-zen-fg font-semibold pr-16 md:pr-0"
             >
               {selected.name}
             </h2>
-            <p className="font-ui text-[0.875rem] leading-relaxed text-zen-fg-muted mt-2 md:mt-2.5 max-w-md pr-16 md:pr-0">
+            <p className="font-ui text-[0.875rem] leading-relaxed text-zen-fg-muted mt-2.5 md:mt-3.5 md:text-[1.0625rem] md:leading-[1.55] max-w-md pr-16 md:pr-0">
               {mapped.defaultMessage}
             </p>
-            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="zen-caption text-zen-fg-subtle">
+            <div className="mt-3.5 flex flex-wrap items-center gap-x-3 gap-y-1 md:mt-4">
+              <span className="zen-caption md:text-[0.875rem] text-zen-fg-subtle">
                 {selected.duration_min} min
               </span>
               {selected.tags?.length ? (
-                <span className="zen-caption text-zen-fg-subtle">
+                <span className="zen-caption md:text-[0.875rem] text-zen-fg-subtle">
                   {selected.tags.slice(0, 2).join(' · ')}
                 </span>
               ) : null}
             </div>
-            <p className="font-ui text-[0.75rem] leading-snug text-zen-fg-subtle mt-2.5 max-w-md hidden md:block">
-              {contextLine}
-            </p>
-            <div className="mt-4 md:mt-5 flex flex-wrap items-center gap-2.5">
-              <ZenButton asChild size="lg" variant="secondary" className="min-h-11 rounded-zen-xl gap-2">
+            <div className="mt-5 md:mt-6 flex flex-wrap items-center gap-3">
+              <ZenButton
+                asChild
+                size="lg"
+                variant="secondary"
+                className="min-h-11 rounded-zen-xl gap-2 md:min-h-12 md:px-7 md:text-[1.0625rem] md:font-semibold"
+              >
                 <Link
                   href={route}
                   onClick={() => setRecommendationLaunch(data.log_id, route)}
                 >
-                  <Play className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
-                  Start now
+                  Start
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </ZenButton>
               <button
                 type="button"
-                className="inline-flex items-center gap-1 font-ui text-[0.8125rem] text-zen-fg-muted hover:text-zen-fg transition-colors focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2 rounded-sm min-h-11 px-1"
+                className="inline-flex items-center gap-1 font-ui text-[0.8125rem] md:text-[0.9375rem] text-zen-fg-muted hover:text-zen-fg transition-colors focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2 rounded-sm min-h-11 px-1"
                 aria-expanded={whyOpen}
                 onClick={() => setWhyOpen((v) => !v)}
               >
@@ -200,7 +207,7 @@ export function ZenRecommendation({
                   initial={reducedMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={reducedMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
-                  className="font-ui text-[0.8125rem] text-zen-fg-muted mt-3 max-w-md overflow-hidden"
+                  className="font-ui text-[0.8125rem] md:text-[0.875rem] text-zen-fg-muted mt-3 max-w-md overflow-hidden"
                 >
                   Personalised from your recent mood, tone, and time of day
                   {data.context?.time_of_day
@@ -213,7 +220,7 @@ export function ZenRecommendation({
           </motion.div>
         </AnimatePresence>
 
-        {/* Desktop: module atmosphere only — Home Panda lives beside this card */}
+        {/* Desktop: module atmosphere only — Home Panda is outside this card */}
         <div className="relative hidden md:flex justify-center items-center min-h-[10.5rem]">
           <RecommendationAtmosphere
             moduleId={selected.module_id}

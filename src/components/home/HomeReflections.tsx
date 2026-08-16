@@ -30,7 +30,7 @@ export function HomeReflections({
       <div className="flex flex-col gap-1 mb-2.5 sm:mb-3 sm:flex-row sm:items-baseline sm:justify-between">
         <h2
           id="home-reflections-heading"
-          className="font-ui text-[0.8125rem] sm:text-[0.875rem] font-medium text-zen-fg"
+          className="font-ui text-[0.8125rem] sm:text-[0.875rem] md:text-[1.125rem] font-semibold text-zen-fg"
         >
           Recent Reflections
         </h2>
