@@ -141,10 +141,34 @@ export default function BurstItOutPage() {
           <section className="mt-6 flex flex-col items-center md:mt-8">
             <BurstBubble phase={phase} size={bubbleSize} thought={thought} />
 
+            <AnimatePresence>
+              {phase === 'affirming' ? (
+                <motion.div
+                  className="mb-6 flex max-w-lg flex-col items-center px-2 text-center"
+                  initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+                >
+                  <p className="font-display text-xl leading-relaxed text-white md:text-2xl">
+                    {affirmation}
+                  </p>
+                  <ZenButton
+                    type="button"
+                    variant="outline"
+                    className="mt-6 rounded-full border-white/30 bg-white/10 text-white hover:bg-white/18 hover:text-white"
+                    onClick={handleReset}
+                  >
+                    Release another thought
+                  </ZenButton>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+
             <BurstCompanion
               phase={phase}
               className={cn(
-                'mt-1 transition-opacity',
+                'transition-opacity',
                 phase === 'affirming' ? 'opacity-100' : 'opacity-95',
               )}
             />
@@ -182,30 +206,6 @@ export default function BurstItOutPage() {
                     className="min-w-[8.5rem] rounded-full"
                   >
                     Pop it
-                  </ZenButton>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-
-            <AnimatePresence>
-              {phase === 'affirming' ? (
-                <motion.div
-                  className="mt-2 flex max-w-lg flex-col items-center px-2 text-center"
-                  initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-                >
-                  <p className="font-display text-xl leading-relaxed text-white md:text-2xl">
-                    {affirmation}
-                  </p>
-                  <ZenButton
-                    type="button"
-                    variant="outline"
-                    className="mt-6 rounded-full border-white/30 bg-white/10 text-white hover:bg-white/18 hover:text-white"
-                    onClick={handleReset}
-                  >
-                    Release another thought
                   </ZenButton>
                 </motion.div>
               ) : null}
