@@ -71,20 +71,22 @@ export function GratitudeCompanion({
     >
       <AnimatePresence>
         {children ? (
-          <motion.div
-            key="offer-card"
-            className="pointer-events-auto z-[60] w-[min(calc(100vw-2rem),22rem)] max-md:fixed max-md:left-1/2 max-md:top-1/2 max-md:-translate-x-1/2 max-md:-translate-y-1/2 max-md:origin-center md:absolute md:bottom-full md:left-1/2 md:-translate-x-1/2 md:mb-4 md:origin-bottom"
-            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.94 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.96 }}
-            transition={
-              reducedMotion
-                ? { duration: 0.12 }
-                : { type: 'spring', stiffness: 280, damping: 26 }
-            }
-          >
-            {children}
-          </motion.div>
+          <div className="pointer-events-none z-[60] max-md:fixed max-md:inset-0 max-md:flex max-md:items-center max-md:justify-center md:absolute md:bottom-full md:left-1/2 md:-translate-x-1/2 md:mb-4">
+            <motion.div
+              key="offer-card"
+              className="pointer-events-auto w-[min(calc(100vw-2.5rem),20rem)] max-md:origin-center md:origin-bottom"
+              initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.94 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.96 }}
+              transition={
+                reducedMotion
+                  ? { duration: 0.12 }
+                  : { type: 'spring', stiffness: 280, damping: 26 }
+              }
+            >
+              {children}
+            </motion.div>
+          </div>
         ) : null}
       </AnimatePresence>
 
