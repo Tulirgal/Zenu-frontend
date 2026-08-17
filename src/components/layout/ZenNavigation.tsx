@@ -225,7 +225,7 @@ export default function ZenNavigation() {
     <>
       {/* Mobile top chrome — hamburger + logo + notification */}
       <nav
-        className="md:hidden sticky top-0 z-50 h-14 pt-safe w-full flex items-center justify-between px-4 shrink-0 bg-zen-surface/85 backdrop-blur-md border-b border-zen-border-soft"
+        className="md:hidden sticky top-0 z-50 h-14 pt-safe w-full flex items-center justify-between px-4 shrink-0 bg-white/60 backdrop-blur-md border-b border-zen-border-soft"
         aria-label="Mobile header"
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -276,7 +276,7 @@ export default function ZenNavigation() {
       </nav>
 
       <ZenSheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-        <ZenSheetContent side="left" className="bg-zen-surface p-0 pt-safe flex flex-col">
+        <ZenSheetContent side="left" className="bg-white/60 backdrop-blur-md p-0 pt-safe flex flex-col">
           <ZenSheetHeader className="px-5 pt-5 pb-3 text-left border-b border-zen-border-soft">
             <ZenSheetTitle className="text-lg font-semibold text-zen-fg">Menu</ZenSheetTitle>
           </ZenSheetHeader>
@@ -363,7 +363,7 @@ export default function ZenNavigation() {
       <motion.aside
         initial={false}
         animate={{ width: isCollapsed ? 80 : 252 }}
-        className="hidden md:flex flex-col h-full z-40 transition-all duration-300 shrink-0 overflow-hidden bg-zen-surface/90 border-r border-zen-border-soft"
+        className="hidden md:flex flex-col h-full z-40 transition-all duration-300 shrink-0 overflow-hidden bg-white/60 backdrop-blur-md border-r border-zen-border-soft"
       >
         <div className="flex items-center justify-between p-4 h-16 shrink-0">
           <AnimatePresence>
