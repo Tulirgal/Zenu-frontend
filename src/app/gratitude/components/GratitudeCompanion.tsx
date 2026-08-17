@@ -73,7 +73,7 @@ export function GratitudeCompanion({
         {children ? (
           <motion.div
             key="offer-card"
-            className="pointer-events-auto absolute bottom-full mb-4 w-[min(calc(100vw-1.5rem),22rem)] origin-bottom"
+            className="pointer-events-auto z-[60] w-[min(calc(100vw-2rem),22rem)] max-md:fixed max-md:left-1/2 max-md:top-1/2 max-md:-translate-x-1/2 max-md:-translate-y-1/2 max-md:origin-center md:absolute md:bottom-full md:left-1/2 md:-translate-x-1/2 md:mb-4 md:origin-bottom"
             initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.94 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.96 }}

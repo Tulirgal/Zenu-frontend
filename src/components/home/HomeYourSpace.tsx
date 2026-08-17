@@ -194,7 +194,7 @@ export function HomeYourSpace({ className }: { className?: string }) {
       </div>
 
       {!showAll && ALL_MODULES.length > INITIAL_SHOW && (
-        <div className="flex justify-center mt-4 hidden md:flex">
+        <div className="flex justify-center mt-4 md:mt-6">
           <motion.button
             onClick={() => setShowAll(true)}
             className={cn(
@@ -214,7 +214,7 @@ export function HomeYourSpace({ className }: { className?: string }) {
       )}
 
       {showAll && (
-        <div className="flex justify-center mt-4 hidden md:flex">
+        <div className="flex justify-center mt-4 md:mt-6">
           <button
             onClick={() => setShowAll(false)}
             className="font-ui text-[0.8125rem] text-zen-fg-subtle hover:text-zen-fg transition-colors underline"
