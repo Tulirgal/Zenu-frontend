@@ -59,7 +59,7 @@ export function GratitudeCompanion({
 
   const shell =
     stage === 'reach'
-      ? { x: reducedMotion ? 0 : -56, y: reducedMotion ? 0 : -28, scale: 1.06 }
+      ? { x: reducedMotion ? 0 : 56, y: reducedMotion ? 0 : -28, scale: 1.06 }
       : stage === 'offer'
         ? { x: reducedMotion ? 0 : -10, y: reducedMotion ? 0 : -8, scale: 1.03 }
         : { x: 0, y: 0, scale: 1 };
