@@ -60,6 +60,7 @@ export function ZenRecommendation({
   }, [refreshKey]);
 
   const selected = data?.recommendations?.[0] ?? null;
+  const allRecommendations = data?.recommendations ?? [];
   const mapped = useMemo(
     () => (selected ? mapRecommendationToPanda(selected.module_id) : null),
     [selected],
@@ -127,105 +128,131 @@ export function ZenRecommendation({
           'relative z-10 h-full',
           'bg-zen-surface border border-zen-border-soft/55',
           'shadow-[0_8px_28px_-18px_rgba(30,41,90,0.12)]',
-          'grid grid-cols-1 md:grid-cols-[1.4fr_0.8fr] md:items-center',
           'px-4 py-5 sm:px-6 md:px-8 md:py-8 lg:px-9 lg:py-9',
-          'gap-3 md:gap-5',
         )}
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${selected.module_id}-${refreshKey}`}
-            initial={reducedMotion ? { opacity: 0 } : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: reducedMotion ? 0.12 : 0.28 }}
-            className="min-w-0 relative"
+        {/* Header */}
+        <div className="mb-4 md:mb-6">
+          <p className="zen-eyebrow text-zen-secondary mb-1.5">
+            For you right now
+          </p>
+          <p className="font-ui text-[0.8125rem] leading-snug text-zen-fg-muted max-w-lg md:text-[0.9375rem] md:leading-relaxed">
+            {contextLine}
+          </p>
+        </div>
+
+        {/* 3 recommendation cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+          {allRecommendations.slice(0, 3).map((rec, i) => {
+            const recMapped = mapRecommendationToPanda(rec.module_id);
+            const recRoute = MODULE_ROUTES[rec.module_id] || recMapped?.href || '/';
+
+            return (
+              <AnimatePresence key={rec.module_id} mode="wait">
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.28, delay: i * 0.08 }}
+                  className={cn(
+                    'relative flex flex-col justify-between',
+                    'rounded-zen-xl border border-zen-border-soft/55',
+                    'bg-zen-surface-raised px-4 py-4 md:px-5 md:py-5',
+                    'hover:border-zen-primary/30 hover:shadow-md transition-all duration-200',
+                    i === 0 && 'ring-1 ring-zen-primary/20',
+                  )}
+                >
+                  {/* Rank badge */}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={cn(
+                      'text-[0.7rem] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full',
+                      i === 0
+                        ? 'bg-zen-primary/10 text-zen-primary'
+                        : 'bg-zen-surface text-zen-fg-subtle border border-zen-border-soft/40',
+                    )}>
+                      {i === 0 ? '✦ Top pick' : `#${i + 1}`}
+                    </span>
+                    <span className="text-[0.75rem] text-zen-fg-subtle">
+                      {rec.duration_min} min
+                    </span>
+                  </div>
+
+                  {/* Module name */}
+                  <h3 className="font-display text-[1rem] md:text-[1.125rem] font-semibold text-zen-fg leading-tight mb-1">
+                    {rec.name}
+                  </h3>
+
+                  {/* Message */}
+                  {recMapped && (
+                    <p className="font-ui text-[0.8125rem] text-zen-fg-muted leading-snug mb-3 line-clamp-2">
+                      {recMapped.defaultMessage}
+                    </p>
+                  )}
+
+                  {/* Tags */}
+                  {rec.tags?.length ? (
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {rec.tags.slice(0, 2).map(tag => (
+                        <span
+                          key={tag}
+                          className="text-[0.7rem] px-2 py-0.5 rounded-full bg-zen-surface border border-zen-border-soft/40 text-zen-fg-subtle"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {/* Start button */}
+                  <Link
+                    href={recRoute}
+                    onClick={() => setRecommendationLaunch(data.log_id, recRoute)}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 self-start',
+                      'font-ui text-[0.8125rem] font-medium',
+                      'px-3.5 py-2 rounded-zen-xl',
+                      'transition-all duration-150',
+                      i === 0
+                        ? 'bg-zen-primary text-white hover:bg-zen-primary/90'
+                        : 'bg-zen-surface border border-zen-border-soft text-zen-fg hover:bg-zen-surface-raised',
+                    )}
+                  >
+                    Start
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </Link>
+                </motion.div>
+              </AnimatePresence>
+            );
+          })}
+        </div>
+
+        {/* Why this — collapsed */}
+        <div className="mt-4">
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 font-ui text-[0.8125rem] text-zen-fg-muted hover:text-zen-fg transition-colors rounded-sm"
+            aria-expanded={whyOpen}
+            onClick={() => setWhyOpen((v) => !v)}
           >
-            {/* Mobile atmosphere sits top-right of the hero — not the Home Panda */}
-            <RecommendationAtmosphere
-              compact
-              moduleId={selected.module_id}
-              className="pointer-events-none absolute -right-2 top-1 md:hidden"
+            Why these?
+            <ChevronDown
+              className={cn('h-3.5 w-3.5 transition-transform', whyOpen && 'rotate-180')}
+              aria-hidden="true"
             />
-
-            <p className="zen-eyebrow text-zen-secondary mb-2.5 md:mb-3.5">
-              For you right now
-            </p>
-            <p className="font-ui text-[0.8125rem] leading-snug text-zen-fg-muted mb-3 max-w-[15.5rem] md:mb-4 md:max-w-lg md:text-[0.9375rem] md:leading-relaxed pr-16 md:pr-0">
-              {contextLine}
-            </p>
-            <h2
-              id="home-rec-heading"
-              className="font-display text-[1.375rem] sm:text-[1.65rem] md:text-[1.875rem] lg:text-[2rem] leading-[1.18] tracking-tight text-zen-fg font-semibold pr-16 md:pr-0"
-            >
-              {selected.name}
-            </h2>
-            <p className="font-ui text-[0.875rem] leading-relaxed text-zen-fg-muted mt-2.5 md:mt-3.5 md:text-[1.0625rem] md:leading-[1.55] max-w-md pr-16 md:pr-0">
-              {mapped.defaultMessage}
-            </p>
-            <div className="mt-3.5 flex flex-wrap items-center gap-x-3 gap-y-1 md:mt-4">
-              <span className="zen-caption md:text-[0.875rem] text-zen-fg-subtle">
-                {selected.duration_min} min
-              </span>
-              {selected.tags?.length ? (
-                <span className="zen-caption md:text-[0.875rem] text-zen-fg-subtle">
-                  {selected.tags.slice(0, 2).join(' · ')}
-                </span>
-              ) : null}
-            </div>
-            <div className="mt-5 md:mt-6 flex flex-wrap items-center gap-3">
-              <ZenButton
-                asChild
-                size="lg"
-                variant="secondary"
-                className="min-h-11 rounded-zen-xl gap-2 md:min-h-12 md:px-7 md:text-[1.0625rem] md:font-semibold"
+          </button>
+          <AnimatePresence initial={false}>
+            {whyOpen ? (
+              <motion.p
+                initial={reducedMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={reducedMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                className="font-ui text-[0.8125rem] text-zen-fg-muted mt-2 max-w-md overflow-hidden"
               >
-                <Link
-                  href={route}
-                  onClick={() => setRecommendationLaunch(data.log_id, route)}
-                >
-                  Start
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              </ZenButton>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 font-ui text-[0.8125rem] md:text-[0.9375rem] text-zen-fg-muted hover:text-zen-fg transition-colors focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2 rounded-sm min-h-11 px-1"
-                aria-expanded={whyOpen}
-                onClick={() => setWhyOpen((v) => !v)}
-              >
-                Why this?
-                <ChevronDown
-                  className={cn('h-3.5 w-3.5 transition-transform', whyOpen && 'rotate-180')}
-                  aria-hidden="true"
-                />
-              </button>
-            </div>
-            <AnimatePresence initial={false}>
-              {whyOpen ? (
-                <motion.p
-                  initial={reducedMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={reducedMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
-                  className="font-ui text-[0.8125rem] md:text-[0.875rem] text-zen-fg-muted mt-3 max-w-md overflow-hidden"
-                >
-                  Personalised from your recent mood, tone, and time of day
-                  {data.context?.time_of_day
-                    ? ` (${data.context.time_of_day.replace(/_/g, ' ')})`
-                    : ''}
-                  .
-                </motion.p>
-              ) : null}
-            </AnimatePresence>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Desktop: module atmosphere only — Home Panda is outside this card */}
-        <div className="relative hidden md:flex justify-center items-center min-h-[10.5rem]">
-          <RecommendationAtmosphere
-            moduleId={selected.module_id}
-            className="absolute inset-0 flex items-center justify-center opacity-95"
-          />
+                Personalised from your recent mood, tone, and time of day
+                {data.context?.time_of_day ? ` (${data.context.time_of_day.replace(/_/g, ' ')})` : ''}
+                .
+              </motion.p>
+            ) : null}
+          </AnimatePresence>
         </div>
       </div>
     </section>

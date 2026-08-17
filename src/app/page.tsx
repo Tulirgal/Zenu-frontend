@@ -252,37 +252,29 @@ const HomePage = () => {
 
           <PssNudge visible={showPssNudge} onDismiss={() => setNudgeDismissed(true)} />
 
-          {/* Desktop: recommendation + secondary pair. Panda is not in this grid. */}
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.55fr)_minmax(18rem,0.95fr)] gap-5 lg:gap-6 lg:items-stretch">
-            <ZenRecommendation
-              refreshKey={recRefreshKey}
-              onPresentationChange={handlePresentationChange}
-              className="h-full"
-            />
+          {/* Recommendation — full width */}
+          <ZenRecommendation
+            refreshKey={recRefreshKey}
+            onPresentationChange={handlePresentationChange}
+            className="w-full"
+          />
 
-            {error ? (
-              <ZenCard variant="subtle" className="border-zen-danger/30 bg-zen-danger-soft text-center lg:col-span-2">
-                <p className="zen-body text-zen-danger">{error}</p>
-              </ZenCard>
-            ) : null}
+          {error ? (
+            <ZenCard variant="subtle" className="border-zen-danger/30 bg-zen-danger-soft text-center w-full">
+              <p className="zen-body text-zen-danger">{error}</p>
+            </ZenCard>
+          ) : null}
 
-            <div className="hidden lg:grid grid-cols-2 gap-4 min-h-0">
-              <HomeGarden className="rounded-zen-xl bg-zen-surface border border-zen-border-soft/55 p-6 shadow-[0_6px_20px_-16px_rgba(30,41,90,0.1)]" />
-              <HomeReflections
-                entries={entries}
-                loading={dashboardLoading}
-                className="rounded-zen-xl bg-zen-surface border border-zen-border-soft/55 p-6 shadow-[0_6px_20px_-16px_rgba(30,41,90,0.1)]"
-              />
-            </div>
-          </div>
-
-          {/* Mobile: secondary pair before wellness space */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:hidden">
-            <HomeGarden className="rounded-zen-xl bg-zen-surface/90 border border-zen-border-soft/55 p-3 shadow-[0_6px_18px_-14px_rgba(30,41,90,0.12)]" />
+          {/* Below recommendation — two columns */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            {/* Healing Garden widget stays here */}
+            <HomeGarden className="rounded-zen-xl bg-zen-surface border border-zen-border-soft/55 p-6 shadow-[0_6px_20px_-16px_rgba(30,41,90,0.1)]" />
+            
+            {/* Recent Reflections / Journal stays here */}
             <HomeReflections
               entries={entries}
               loading={dashboardLoading}
-              className="rounded-zen-xl bg-zen-surface/90 border border-zen-border-soft/55 p-3 shadow-[0_6px_18px_-14px_rgba(30,41,90,0.12)]"
+              className="rounded-zen-xl bg-zen-surface border border-zen-border-soft/55 p-6 shadow-[0_6px_20px_-16px_rgba(30,41,90,0.1)]"
             />
           </div>
 
