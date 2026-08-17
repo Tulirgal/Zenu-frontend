@@ -89,11 +89,13 @@ function AccordionGroup({
   isOpen,
   onToggle,
   isCollapsed,
+  theme,
 }: {
   group: typeof NAV_GROUPS[number];
   isOpen: boolean;
   onToggle: () => void;
   isCollapsed: boolean;
+  theme: ReturnType<typeof getTheme>;
 }) {
   const pathname = usePathname();
   const isGroupActive = group.items.some(i => pathname?.startsWith(i.href));
@@ -111,9 +113,14 @@ function AccordionGroup({
               href={item.href}
               title={item.label}
               className={cn(
-                'flex items-center justify-center w-10 h-10 rounded-zen-md transition-colors',
-                isActive ? 'text-zen-primary bg-zen-primary-soft' : 'text-zen-fg-muted hover:bg-zen-bg-subtle hover:text-zen-fg'
+                'flex items-center justify-center w-10 h-10 rounded-zen-md transition-all duration-200',
+                !isActive && 'opacity-60 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10'
               )}
+              style={
+                isActive
+                  ? { color: theme.accentColor, backgroundColor: theme.accentLight }
+                  : { color: theme.textPrimary }
+              }
             >
               <Icon className="h-5 w-5" />
             </Link>
@@ -128,10 +135,14 @@ function AccordionGroup({
       <button
         onClick={onToggle}
         className={cn(
-          'w-full flex items-center justify-between px-3 py-2 rounded-zen-md transition-colors',
+          'w-full flex items-center justify-between px-3 py-2 rounded-zen-md transition-all duration-200',
           'text-[0.6875rem] font-semibold uppercase tracking-[0.1em]',
-          isGroupActive ? 'text-zen-fg-muted' : 'text-zen-fg-subtle hover:text-zen-fg-muted'
+          !isGroupActive && 'opacity-70 hover:opacity-100'
         )}
+        style={{
+          color: isGroupActive ? theme.textPrimary : theme.textPrimary,
+          opacity: isGroupActive ? 1 : undefined,
+        }}
       >
         <span>{group.label}</span>
         <ChevronDown
@@ -156,11 +167,14 @@ function AccordionGroup({
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      'flex items-center gap-3 px-3 py-2 rounded-zen-lg transition-colors text-[0.875rem]',
-                      isActive
-                        ? 'text-zen-secondary bg-zen-secondary-soft font-medium'
-                        : 'text-zen-fg-muted hover:text-zen-fg hover:bg-zen-bg-subtle/80'
+                      'flex items-center gap-3 px-3 py-2 rounded-zen-lg transition-all duration-200 text-[0.875rem]',
+                      isActive ? 'font-medium' : 'opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10'
                     )}
+                    style={
+                      isActive
+                        ? { color: theme.accentColor, backgroundColor: theme.accentLight }
+                        : { color: theme.textPrimary }
+                    }
                   >
                     <Icon className="h-4 w-4 shrink-0 opacity-80" />
                     <span>{item.label}</span>
@@ -350,11 +364,14 @@ export default function ZenNavigation() {
               href="/"
               onClick={() => setMobileNavOpen(false)}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-zen-lg text-sm mb-1',
-                pathname === '/'
-                  ? 'bg-zen-secondary-soft text-zen-secondary font-medium'
-                  : 'text-zen-fg-muted hover:bg-zen-bg-subtle',
+                'flex items-center gap-3 px-3 py-2.5 rounded-zen-lg text-sm mb-1 transition-all duration-200',
+                pathname === '/' ? 'font-medium' : 'opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10'
               )}
+              style={
+                pathname === '/'
+                  ? { color: theme.accentColor, backgroundColor: theme.accentLight }
+                  : { color: theme.textPrimary }
+              }
             >
               <Heart className="h-4 w-4" />
               Home
@@ -363,18 +380,21 @@ export default function ZenNavigation() {
               href="/chat"
               onClick={() => setMobileNavOpen(false)}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-zen-lg text-sm mb-4',
-                pathname?.startsWith('/chat')
-                  ? 'bg-zen-secondary-soft text-zen-secondary font-medium'
-                  : 'text-zen-fg-muted hover:bg-zen-bg-subtle',
+                'flex items-center gap-3 px-3 py-2.5 rounded-zen-lg text-sm mb-4 transition-all duration-200',
+                pathname?.startsWith('/chat') ? 'font-medium' : 'opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10'
               )}
+              style={
+                pathname?.startsWith('/chat')
+                  ? { color: theme.accentColor, backgroundColor: theme.accentLight }
+                  : { color: theme.textPrimary }
+              }
             >
               <Bot className="h-4 w-4" />
               Seviyan
             </Link>
             {NAV_GROUPS.map((group) => (
               <div key={group.label} className="mb-4">
-                <p className="px-3 mb-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-zen-fg-subtle">
+                <p className="px-3 mb-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.1em]" style={{ color: theme.textPrimary, opacity: 0.6 }}>
                   {group.label}
                 </p>
                 <div className="flex flex-col gap-0.5">
@@ -387,11 +407,14 @@ export default function ZenNavigation() {
                         href={item.href}
                         onClick={() => setMobileNavOpen(false)}
                         className={cn(
-                          'flex items-center gap-3 px-3 py-2.5 rounded-zen-lg text-sm',
-                          active
-                            ? 'bg-zen-secondary-soft text-zen-secondary font-medium'
-                            : 'text-zen-fg-muted hover:bg-zen-bg-subtle hover:text-zen-fg',
+                          'flex items-center gap-3 px-3 py-2.5 rounded-zen-lg text-sm transition-all duration-200',
+                          active ? 'font-medium' : 'opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10'
                         )}
+                        style={
+                          active
+                            ? { color: theme.accentColor, backgroundColor: theme.accentLight }
+                            : { color: theme.textPrimary }
+                        }
                       >
                         <Icon className="h-4 w-4 shrink-0" />
                         {item.label}
@@ -402,19 +425,20 @@ export default function ZenNavigation() {
               </div>
             ))}
           </div>
-          <div className="border-t border-zen-border-soft p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))]" style={{ borderColor: theme.cardBorder }}>
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="h-9 w-9 rounded-full bg-zen-secondary-soft text-zen-secondary flex items-center justify-center text-sm font-semibold shrink-0">
+                <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0" style={{ backgroundColor: theme.accentLight, color: theme.accentColor }}>
                   {displayName.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-sm font-medium text-zen-fg truncate">{displayName}</span>
+                <span className="text-sm font-medium truncate" style={{ color: theme.textPrimary }}>{displayName}</span>
               </div>
               <button
                 type="button"
                 onClick={handleSignOut}
                 disabled={loading}
-                className="p-2 rounded-full text-zen-fg-subtle hover:text-zen-danger hover:bg-zen-bg-subtle"
+                className="p-2 rounded-full opacity-70 hover:opacity-100 hover:text-zen-danger hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                style={{ color: theme.textPrimary }}
                 aria-label="Sign out"
               >
                 <LogOut className="h-4 w-4" />
@@ -473,12 +497,15 @@ export default function ZenNavigation() {
               <Link
                 href="/"
                 className={cn(
-                  'flex items-center gap-3 rounded-zen-lg transition-colors',
+                  'flex items-center gap-3 rounded-zen-lg transition-all duration-200',
                   isCollapsed ? 'justify-center w-10 h-10 mx-auto' : 'px-3 py-2',
-                  pathname === '/'
-                    ? 'text-zen-secondary bg-zen-secondary-soft font-medium'
-                    : 'text-zen-fg-muted hover:bg-zen-bg-subtle hover:text-zen-fg'
+                  pathname === '/' ? 'font-medium' : 'opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10'
                 )}
+                style={
+                  pathname === '/'
+                    ? { color: theme.accentColor, backgroundColor: theme.accentLight }
+                    : { color: theme.textPrimary }
+                }
                 title="Home"
               >
                 <Heart className={cn('shrink-0', isCollapsed ? 'h-5 w-5' : 'h-4 w-4')} />
@@ -488,12 +515,15 @@ export default function ZenNavigation() {
               <Link
                 href="/chat"
                 className={cn(
-                  'flex items-center gap-3 rounded-zen-lg transition-colors mb-3',
+                  'flex items-center gap-3 rounded-zen-lg transition-all duration-200 mb-3',
                   isCollapsed ? 'justify-center w-10 h-10 mx-auto' : 'px-3 py-2',
-                  pathname?.startsWith('/chat')
-                    ? 'text-zen-secondary bg-zen-secondary-soft font-medium'
-                    : 'text-zen-fg-muted hover:bg-zen-bg-subtle hover:text-zen-fg'
+                  pathname?.startsWith('/chat') ? 'font-medium' : 'opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10'
                 )}
+                style={
+                  pathname?.startsWith('/chat')
+                    ? { color: theme.accentColor, backgroundColor: theme.accentLight }
+                    : { color: theme.textPrimary }
+                }
                 title="Seviyan"
               >
                 <Bot className={cn('shrink-0', isCollapsed ? 'h-5 w-5' : 'h-4 w-4')} />
@@ -507,13 +537,14 @@ export default function ZenNavigation() {
                   isOpen={openGroups[group.label]}
                   onToggle={() => toggleGroup(group.label)}
                   isCollapsed={isCollapsed}
+                  theme={theme}
                 />
               ))}
             </div>
           ) : (
             <div className="flex flex-col gap-3 px-2">
-              {!isCollapsed && <p className="text-sm text-zen-fg-muted mb-2">Welcome to ZenU</p>}
-              <Link href="/signin" className={cn('flex justify-center px-4 py-2 text-sm font-medium text-zen-fg-muted hover:text-zen-fg hover:bg-zen-bg-subtle rounded-zen-md', isCollapsed && 'px-0')}>
+              {!isCollapsed && <p className="text-sm opacity-80 mb-2" style={{ color: theme.textPrimary }}>Welcome to ZenU</p>}
+              <Link href="/signin" className={cn('flex justify-center px-4 py-2 text-sm font-medium rounded-zen-md opacity-80 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10', isCollapsed && 'px-0')} style={{ color: theme.textPrimary }}>
                 {isCollapsed ? <LogOut className="h-5 w-5 rotate-180" /> : 'Sign in'}
               </Link>
               {!isCollapsed && (
@@ -529,13 +560,14 @@ export default function ZenNavigation() {
           <div className="shrink-0 p-3 overflow-hidden">
             {isCollapsed ? (
               <div className="flex flex-col gap-2 items-center">
-                <div className="h-9 w-9 rounded-full bg-zen-secondary-soft text-zen-secondary flex items-center justify-center text-sm font-semibold shrink-0">
+                <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0" style={{ backgroundColor: theme.accentLight, color: theme.accentColor }}>
                   {displayName.charAt(0).toUpperCase()}
                 </div>
                 <button
                   onClick={handleSignOut}
                   disabled={loading}
-                  className="p-2 rounded-full text-zen-fg-muted hover:text-zen-danger hover:bg-zen-bg-subtle transition-colors"
+                  className="p-2 rounded-full opacity-70 hover:opacity-100 hover:text-zen-danger hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                  style={{ color: theme.textPrimary }}
                   title="Sign out"
                 >
                   <LogOut className="h-5 w-5" />
@@ -544,18 +576,19 @@ export default function ZenNavigation() {
             ) : (
               <div className="flex items-center justify-between gap-3 p-2 rounded-zen-xl w-full">
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="h-9 w-9 rounded-full bg-zen-secondary-soft text-zen-secondary flex items-center justify-center text-sm font-semibold shrink-0">
+                  <div className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0" style={{ backgroundColor: theme.accentLight, color: theme.accentColor }}>
                     {displayName.charAt(0).toUpperCase()}
                   </div>
-                  <div className="flex flex-col overflow-hidden">
-                    <span className="text-sm font-medium text-zen-fg truncate">{displayName}</span>
-                    <span className="text-xs text-zen-fg-subtle truncate">Student</span>
+                  <div className="flex flex-col overflow-hidden" style={{ color: theme.textPrimary }}>
+                    <span className="text-sm font-medium truncate">{displayName}</span>
+                    <span className="text-xs opacity-60 truncate">Student</span>
                   </div>
                 </div>
                 <button
                   onClick={handleSignOut}
                   disabled={loading}
-                  className="p-2 shrink-0 rounded-full text-zen-fg-subtle hover:text-zen-danger hover:bg-zen-bg-subtle transition-colors"
+                  className="p-2 shrink-0 rounded-full opacity-70 hover:opacity-100 hover:text-zen-danger hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                  style={{ color: theme.textPrimary }}
                   title="Sign out"
                 >
                   <LogOut className="h-4 w-4" />
