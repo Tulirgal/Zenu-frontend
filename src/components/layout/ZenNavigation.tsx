@@ -23,16 +23,39 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
-import { authClient } from '@/lib/authClient';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { cn } from '@/lib/utils';
 import { isZenFocusRoute } from '@/lib/zenFocus';
+import { getTheme } from '@/lib/moduleThemes';
 import {
   ZenSheet,
   ZenSheetContent,
   ZenSheetHeader,
   ZenSheetTitle,
 } from '@/components/zen/ZenSheet';
+
+function hexToHslTuple(hex: string): string {
+  hex = hex.replace('#', '');
+  if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+  const r = parseInt(hex.substring(0, 2), 16) / 255;
+  const g = parseInt(hex.substring(2, 4), 16) / 255;
+  const b = parseInt(hex.substring(4, 6), 16) / 255;
+
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
 
 const NAV_GROUPS = [
   {
@@ -159,6 +182,30 @@ export default function ZenNavigation() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [notifyOpen, setNotifyOpen] = useState(false);
+
+  const getModuleKey = () => {
+    if (!pathname || pathname === '/') return 'home';
+    if (pathname.startsWith('/breathing')) return 'breathing';
+    if (pathname.startsWith('/meditation')) return 'mindfulness';
+    if (pathname.startsWith('/journal')) return 'diary';
+    if (pathname.startsWith('/art')) return 'doodle';
+    if (pathname.startsWith('/healing-garden')) return 'healing-garden';
+    if (pathname.startsWith('/innercompass')) return 'innercompass';
+    return 'home';
+  };
+
+  const theme = getTheme(getModuleKey());
+  
+  const themeVars = useMemo(() => {
+    const fg = hexToHslTuple(theme.textPrimary);
+    const muted = hexToHslTuple(theme.textSecondary);
+    return {
+      '--zen-fg': fg,
+      '--zen-fg-muted': muted,
+      '--zen-fg-subtle': muted,
+      '--zen-surface': 'transparent', // Let cardBg take over
+    } as React.CSSProperties;
+  }, [theme]);
   
   // Track open accordions. Expand all by default
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
@@ -173,6 +220,7 @@ export default function ZenNavigation() {
 
   const handleSignOut = useCallback(async () => {
     try {
+      const { authClient } = await import('@/lib/authClient');
       await authClient.signOut();
     } catch (err) {
       console.error('Sign out failed', err);
@@ -225,7 +273,14 @@ export default function ZenNavigation() {
     <>
       {/* Mobile top chrome — hamburger + logo + notification */}
       <nav
-        className="md:hidden sticky top-0 z-50 h-14 pt-safe w-full flex items-center justify-between px-4 shrink-0 bg-zen-surface/85 backdrop-blur-md border-b border-zen-border-soft"
+        className="md:hidden sticky top-0 z-50 h-14 pt-safe w-full flex items-center justify-between px-4 shrink-0 border-b shadow-zen-floating"
+        style={{
+          background: theme.cardBg,
+          borderColor: theme.cardBorder,
+          backdropFilter: 'blur(32px) saturate(220%)',
+          WebkitBackdropFilter: 'blur(32px) saturate(220%)',
+          ...themeVars,
+        }}
         aria-label="Mobile header"
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -276,8 +331,18 @@ export default function ZenNavigation() {
       </nav>
 
       <ZenSheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-        <ZenSheetContent side="left" className="bg-zen-surface p-0 pt-safe flex flex-col">
-          <ZenSheetHeader className="px-5 pt-5 pb-3 text-left border-b border-zen-border-soft">
+        <ZenSheetContent 
+          side="left" 
+          className="p-0 pt-safe flex flex-col shadow-zen-floating"
+          style={{
+            background: theme.cardBg,
+            borderColor: theme.cardBorder,
+            backdropFilter: 'blur(32px) saturate(220%)',
+            WebkitBackdropFilter: 'blur(32px) saturate(220%)',
+            ...themeVars,
+          }}
+        >
+          <ZenSheetHeader className="px-5 pt-5 pb-3 text-left border-b" style={{ borderColor: theme.cardBorder }}>
             <ZenSheetTitle className="text-lg font-semibold text-zen-fg">Menu</ZenSheetTitle>
           </ZenSheetHeader>
           <div className="flex-1 overflow-y-auto px-3 py-4">
@@ -363,7 +428,14 @@ export default function ZenNavigation() {
       <motion.aside
         initial={false}
         animate={{ width: isCollapsed ? 80 : 252 }}
-        className="hidden md:flex flex-col h-full z-40 transition-all duration-300 shrink-0 overflow-hidden bg-zen-surface/90 border-r border-zen-border-soft"
+        className="hidden md:flex flex-col h-full z-40 transition-all duration-300 shrink-0 overflow-hidden border-r shadow-zen-floating"
+        style={{
+          background: theme.cardBg,
+          borderColor: theme.cardBorder,
+          backdropFilter: 'blur(32px) saturate(220%)',
+          WebkitBackdropFilter: 'blur(32px) saturate(220%)',
+          ...themeVars,
+        }}
       >
         <div className="flex items-center justify-between p-4 h-16 shrink-0">
           <AnimatePresence>
