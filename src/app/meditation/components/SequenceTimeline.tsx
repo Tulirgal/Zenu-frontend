@@ -6,10 +6,10 @@ import { JPMR_STEPS } from './practiceContent';
 export function SequenceTimeline({ className }: { className?: string }) {
   return (
     <section className={cn('min-w-0', className)}>
-      <h2 className="font-display text-[1.25rem] leading-tight tracking-[-0.01em] text-zen-fg md:text-[1.5rem]">
+      <h2 className="font-display text-[1.25rem] leading-tight tracking-[-0.01em] md:text-[1.5rem]">
         Guided sequence
       </h2>
-      <p className="mt-1 font-ui text-[0.875rem] text-zen-fg-muted md:text-[0.9375rem]">
+      <p className="mt-1 font-ui text-[0.875rem] opacity-80 md:text-[0.9375rem]">
         Muscle groups in this practice
       </p>
 
@@ -29,13 +29,13 @@ export function SequenceTimeline({ className }: { className?: string }) {
                 {num}
               </div>
               <div className="min-w-0 pt-0.5">
-                <p className="font-ui text-[0.9375rem] font-medium text-zen-fg md:text-[1rem]">
-                  <span className="text-zen-fg-subtle" aria-hidden="true">
+                <p className="font-ui text-[0.9375rem] font-medium md:text-[1rem]">
+                  <span className="opacity-60" aria-hidden="true">
                     ──{' '}
                   </span>
                   {step.muscle}
                 </p>
-                <p className="mt-1 font-ui text-[0.875rem] leading-relaxed text-zen-fg-muted md:text-[0.9375rem]">
+                <p className="mt-1 font-ui text-[0.875rem] leading-relaxed opacity-80 md:text-[0.9375rem]">
                   {step.instruction}
                 </p>
               </div>

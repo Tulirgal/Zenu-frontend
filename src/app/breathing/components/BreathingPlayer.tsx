@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { Panda } from '@/components/panda/Panda';
 import { ZenBreathingCircle, ZenButton } from '@/components/zen';
+import ModulePage from '@/components/ui/ModulePage';
+import { getTheme } from '@/lib/moduleThemes';
 import type { BreathingPattern } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import {
@@ -204,20 +206,12 @@ export function BreathingPlayer({
     <div
       className={cn(
         'fixed inset-0 z-50 flex flex-col overflow-hidden',
-        'bg-[hsl(40,40%,99%)]',
       )}
       role="dialog"
       aria-modal="true"
       aria-label={`${pattern.name} breathing session`}
     >
-      <div
-        className="pointer-events-none absolute inset-0"
-        aria-hidden="true"
-        style={{
-          background:
-            'radial-gradient(ellipse 800px 500px at 50% 30%, hsl(262 40% 72% / 0.14), transparent 65%), radial-gradient(ellipse 600px 400px at 20% 80%, hsl(200 55% 70% / 0.1), transparent 60%)',
-        }}
-      />
+      <ModulePage theme={getTheme('breathing')} className="h-full flex flex-col">
 
       {/* Header */}
       <div className="relative z-10 flex items-start justify-between gap-3 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-2 sm:px-6 md:px-10">
@@ -233,10 +227,10 @@ export function BreathingPlayer({
             />
           </div>
           <div className="min-w-0">
-            <h2 className="truncate font-display text-lg tracking-[-0.01em] text-zen-fg md:text-xl">
+            <h2 className="truncate font-display text-lg tracking-[-0.01em] md:text-xl">
               {pattern.name}
             </h2>
-            <p className="font-ui text-sm text-zen-fg-muted">{duration} min session</p>
+            <p className="font-ui text-sm opacity-80">{duration} min session</p>
             <div className="mt-0.5 min-h-[1.1rem]" aria-live="polite">
               {whisper ? (
                 <p className="font-ui text-xs text-zen-secondary">{whisper}</p>
@@ -268,8 +262,8 @@ export function BreathingPlayer({
               size={96}
               label="Panda companion"
             />
-            <h3 className="mt-4 font-display text-2xl text-zen-fg md:text-3xl">Well done.</h3>
-            <p className="mt-2 font-ui text-[0.9375rem] text-zen-fg-muted">
+            <h3 className="mt-4 font-display text-2xl md:text-3xl">Well done.</h3>
+            <p className="mt-2 font-ui text-[0.9375rem] opacity-80">
               You gave yourself a few quiet minutes.
             </p>
             <div className="mt-8 flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
@@ -286,7 +280,7 @@ export function BreathingPlayer({
             <p className="font-ui text-[0.6875rem] font-medium uppercase tracking-[0.16em] text-zen-secondary">
               {phase}
             </p>
-            <p className="mt-1 font-ui text-sm text-zen-fg-muted md:text-base">
+            <p className="mt-1 font-ui text-sm opacity-80 md:text-base">
               {uiPhase === 'ready' ? 'When you are ready' : phaseInstruction(phase)}
             </p>
 
@@ -303,7 +297,7 @@ export function BreathingPlayer({
             </div>
 
             <p
-              className="mt-1 font-display text-[2.75rem] tabular-nums tracking-tight text-zen-fg md:text-[3.25rem]"
+              className="mt-1 font-display text-[2.75rem] tabular-nums tracking-tight md:text-[3.25rem]"
               aria-live="polite"
             >
               {String(Math.max(0, remaining)).padStart(2, '0')}
@@ -398,6 +392,8 @@ export function BreathingPlayer({
           </div>
         </div>
       ) : null}
+
+      </ModulePage>
     </div>
   );
 }

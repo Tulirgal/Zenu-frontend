@@ -345,14 +345,14 @@ export function JournalBook({
         </p>
         <h1
           className={cn(
-            'mt-2 font-display font-medium text-zen-fg',
+            'mt-2 font-display font-medium',
             'text-[1.875rem] leading-[1.15] tracking-[-0.02em]',
             'sm:text-[2.5rem] md:text-[3rem]',
           )}
         >
           Your private space
         </h1>
-        <p className="mx-auto mt-3 max-w-xl font-ui text-[0.9375rem] leading-relaxed text-zen-fg-muted md:mx-0">
+        <p className="mx-auto mt-3 max-w-xl font-ui text-[0.9375rem] leading-relaxed opacity-80 md:mx-0">
           Open the book. Write things down. You don&apos;t have to make them perfect.
         </p>
       </div>

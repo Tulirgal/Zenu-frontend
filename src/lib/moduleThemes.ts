@@ -150,17 +150,17 @@ export const MODULE_THEMES: Record<string, ModuleTheme> = {
     particles: { color: '#f2c14e', count: 8, size: [3, 5], speed: 0.15 },
     liveEffect: 'fireflies',
   },
-  // INNER COMPASS — cosmic deep space
-  'inner-compass': {
-    gradient: 'linear-gradient(160deg, #050014 0%, #0f0030 35%, #1a0050 60%, #050014 100%)',
-    accentColor: '#e879f9',
-    accentLight: 'rgba(232,121,249,0.1)',
-    textPrimary: '#fdf4ff',
-    textSecondary: '#d946ef',
-    cardBg: 'rgba(5,0,20,0.6)',
-    cardBorder: 'rgba(232,121,249,0.2)',
-    particles: { color: '#e0aaff', count: 60, size: [1, 2], speed: 0.08 },
-    liveEffect: 'stars',
+  // INNER COMPASS — light pink
+  innercompass: {
+    gradient: 'linear-gradient(160deg, #FFF0F5 0%, #FFE1E9 50%, #FFD1DF 100%)',
+    accentColor: '#ec4899',
+    accentLight: 'rgba(236,72,153,0.1)',
+    textPrimary: '#831843',
+    textSecondary: '#be185d',
+    cardBg: 'rgba(255,255,255,0.6)',
+    cardBorder: 'rgba(236,72,153,0.2)',
+    particles: { color: '#fbcfe8', count: 30, size: [2, 5], speed: 0.15 },
+    liveEffect: 'petals',
   },
 };
 
