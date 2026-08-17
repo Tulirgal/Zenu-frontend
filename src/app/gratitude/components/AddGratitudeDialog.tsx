@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { forwardRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
   ZenButton,
@@ -14,17 +14,15 @@ import {
   ZenTextarea,
 } from '@/components/zen';
 
-export function AddGratitudeDialog({
-  open,
-  onOpenChange,
-  onSubmit,
-  submitting,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (input: { title: string; content: string }) => Promise<void>;
-  submitting: boolean;
-}) {
+export const AddGratitudeDialog = forwardRef<
+  HTMLDivElement,
+  {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSubmit: (input: { title: string; content: string }) => Promise<void>;
+    submitting: boolean;
+  }
+>(function AddGratitudeDialog({ open, onOpenChange, onSubmit, submitting }, ref) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
 
@@ -48,7 +46,7 @@ export function AddGratitudeDialog({
 
   return (
     <ZenDialog open={open} onOpenChange={handleClose}>
-      <ZenDialogContent className="sm:max-w-xl">
+      <ZenDialogContent ref={ref as never} className="sm:max-w-xl">
         <ZenDialogHeader>
           <ZenDialogTitle className="font-display">Add a gratitude moment</ZenDialogTitle>
           <ZenDialogDescription>
@@ -86,4 +84,4 @@ export function AddGratitudeDialog({
       </ZenDialogContent>
     </ZenDialog>
   );
-}
+});

@@ -76,3 +76,5 @@ export type { ZenBreathingCircleProps, BreathPhase } from './ZenBreathingCircle'
 
 export { ZenSoundscapeBar } from './ZenSoundscapeBar';
 export { ZenGuidedPlayer } from './ZenGuidedPlayer';
+
+export { ZenBackLink } from './ZenBackLink';

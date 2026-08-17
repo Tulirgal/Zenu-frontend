@@ -1,10 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import { trackEngagement } from '@/lib/signals';
 import { cn } from '@/lib/utils';
+import { ZenBackLink } from '@/components/zen';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { BubblesField, type BubblesEvent } from './components/BubblesField';
 import { BubblesHelp } from './components/BubblesHelp';
@@ -52,22 +51,10 @@ export default function BubblesPage() {
         <div className="absolute -right-16 bottom-32 h-56 w-56 rounded-full bg-[hsl(190_70%_50%/0.1)] blur-3xl" />
       </div>
 
-      <Link
-        href="/"
-        aria-label="Back to home"
-        className={cn(
-          'absolute left-3 top-3 z-30 inline-flex min-h-11 items-center gap-2 rounded-zen-full px-3 py-2',
-          'border border-white/15 bg-black/35 font-ui text-sm text-white/90 backdrop-blur-md',
-          'hover:bg-black/50 active:scale-[0.97]',
-          'focus-visible:outline-2 focus-visible:outline-white/70 focus-visible:outline-offset-2',
-          'md:left-4 md:top-4',
-        )}
-      >
-        <ArrowLeft className="h-4 w-4 text-white/70" aria-hidden="true" />
-        <span className="hidden sm:inline text-white/60">ZenU</span>
-        <span className="hidden h-3 w-px bg-white/20 sm:block" aria-hidden="true" />
-        <span>Bubbles</span>
-      </Link>
+      <ZenBackLink
+        section="Bubbles"
+        className="absolute left-3 top-3 z-30 md:left-4 md:top-4"
+      />
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col p-2 pt-14 md:p-3 md:pt-16">
         <div

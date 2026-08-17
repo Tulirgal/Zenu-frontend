@@ -19,25 +19,25 @@ export function GratitudeHeader({
   className?: string;
 }) {
   return (
-    <header className={cn('relative', className)}>
-      <div className="min-w-0 text-center md:text-left">
+    <header className={cn('relative text-center', className)}>
+      <div className="min-w-0">
         <p className="font-ui text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-[hsl(28_55%_42%)] md:text-[0.75rem]">
           Hello {greetingName}
         </p>
         <h1
           className={cn(
             'mt-2 font-display font-medium text-zen-fg',
-            'text-[1.875rem] leading-[1.15] tracking-[-0.02em]',
-            'sm:text-[2.5rem] md:text-[3rem]',
+            'text-[1.75rem] leading-[1.15] tracking-[-0.02em]',
+            'sm:text-[2.25rem] md:text-[2.75rem]',
           )}
         >
           Moments worth keeping.
         </h1>
-        <p className="mx-auto mt-3 max-w-xl font-ui text-[0.9375rem] leading-relaxed text-zen-fg-muted md:mx-0 md:text-[1.0625rem]">
-          Save a grateful note. When you need one, pick a memory from the jar.
+        <p className="mx-auto mt-2 max-w-md font-ui text-[0.9375rem] leading-relaxed text-zen-fg-muted md:text-[1.0625rem]">
+          Save a note. Ask Panda to choose one when you need it.
         </p>
 
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3 md:justify-start">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
           <ZenButton
             type="button"
             variant="accent"
@@ -56,7 +56,7 @@ export function GratitudeHeader({
             loading={picking}
             disabled={!canPick || picking}
           >
-            Pick a memory
+            {picking ? 'Panda is choosing…' : 'Ask Panda to pick'}
           </ZenButton>
         </div>
       </div>

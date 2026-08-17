@@ -16,6 +16,7 @@ function resolveKind(moduleId?: string | null): AtmosphereKind {
   const id = moduleId.toLowerCase();
   if (id.includes('breath')) return 'breath';
   if (id.includes('mindful') || id.includes('meditat')) return 'still';
+  if (id.includes('chat') || id.includes('seviyan')) return 'reflect';
   if (id.includes('doodle') || id.includes('scribble') || id.includes('art') || id.includes('mandala'))
     return 'create';
   if (id.includes('burst') || id.includes('bubble')) return 'release';

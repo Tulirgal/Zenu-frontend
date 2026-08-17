@@ -1,50 +1,69 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { trackEngagement } from '@/lib/signals';
 
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { apiClient } from '@/lib/apiClient';
-import type { GratitudeEntry, GratitudeOverallReview } from '@/lib/types';
+import type { GratitudeEntry } from '@/lib/types';
+import type { PandaAnimation, PandaEmotion } from '@/components/panda/types';
 import {
   ZenPage,
-  ZenButton,
-  ZenDialog,
-  ZenDialogContent,
-  ZenDialogDescription,
-  ZenDialogHeader,
-  ZenDialogTitle,
+  ZenBackLink,
   ZenSkeleton,
 } from '@/components/zen';
 import { cn } from '@/lib/utils';
 import { GratitudeHeader } from './components/GratitudeHeader';
-import { GratitudeJar } from './components/GratitudeJar';
+import { GratitudeJar, type GratitudeJarHandle, type JarPhase } from './components/GratitudeJar';
 import { MemoryReveal } from './components/MemoryReveal';
 import { AddGratitudeDialog } from './components/AddGratitudeDialog';
-import { RecentMoments } from './components/RecentMoments';
 import {
   GratitudeCompanion,
+  type CompanionStage,
   type GratitudeWhisper,
 } from './components/GratitudeCompanion';
 import { pickLocalRandom } from './components/gratitudeUtils';
+import { DepositRitual } from './components/ritual/DepositRitual';
+import { RetrieveRitual } from './components/ritual/RetrieveRitual';
+import { getElementCenter, type Point } from './components/ritual/geometry';
 
 function GratitudePageInner() {
   const { user } = useAuth();
+  const jarRef = useRef<GratitudeJarHandle>(null);
+  const dialogPanelRef = useRef<HTMLDivElement>(null);
+
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<GratitudeEntry[]>([]);
   const [composerOpen, setComposerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [picking, setPicking] = useState(false);
-  const [jarActive, setJarActive] = useState(false);
-  const [reviewing, setReviewing] = useState(false);
+  const [jarPhase, setJarPhase] = useState<JarPhase>('idle');
   const [revealed, setRevealed] = useState<GratitudeEntry | null>(null);
   const [whisperLine, setWhisperLine] = useState<string | null>(null);
-  const [overallReview, setOverallReview] = useState<GratitudeOverallReview | null>(null);
-  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [companionWhisper, setCompanionWhisper] = useState<GratitudeWhisper>(null);
   const [whisperPulse, setWhisperPulse] = useState(0);
+  const [pandaEmotion, setPandaEmotion] = useState<PandaEmotion>('calm');
+  const [pandaAnimation, setPandaAnimation] = useState<PandaAnimation>('idle');
+  const [companionStage, setCompanionStage] = useState<CompanionStage>('rest');
+
+  const [deposit, setDeposit] = useState<{
+    source: Point;
+    mouth: Point;
+    preview: { title: string; content: string };
+  } | null>(null);
+  const [retrieve, setRetrieve] = useState<{
+    mouth: Point;
+    entry: GratitudeEntry;
+    feedback: string | null;
+  } | null>(null);
+  const [pendingReveal, setPendingReveal] = useState<{
+    entry: GratitudeEntry;
+    feedback: string | null;
+  } | null>(null);
+  const pendingRevealRef = useRef(pendingReveal);
+  pendingRevealRef.current = pendingReveal;
 
   useEffect(() => {
     trackEngagement('journal_gratitude', 'opened');
@@ -62,8 +81,6 @@ function GratitudePageInner() {
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
-    setOverallReview(null);
-    setReviewDialogOpen(false);
     try {
       const data = await apiClient.getGratitudeEntries();
       setEntries(data);
@@ -88,10 +105,32 @@ function GratitudePageInner() {
         content: input.content.trim(),
       });
       setEntries((prev) => [created, ...prev]);
+
+      const source =
+        getElementCenter(dialogPanelRef.current) ??
+        getElementCenter(document.querySelector('[role="dialog"]'));
+      const mouth = getElementCenter(jarRef.current?.getMouthElement() ?? null);
+
       setComposerOpen(false);
-      toast.success('Moment saved in your jar.');
-      flashWhisper('saved');
       await apiClient.recordActivity('gratitude', { entryId: created.id });
+
+      if (source && mouth) {
+        setPandaEmotion('listening');
+        setPandaAnimation('attentive');
+        setDeposit({
+          source,
+          mouth,
+          preview: {
+            title: input.title.trim() || 'Gratitude',
+            content: input.content.trim(),
+          },
+        });
+      } else {
+        toast.success('Moment saved in your jar.');
+        flashWhisper('saved');
+        setPandaEmotion('happy');
+        setPandaAnimation('idle');
+      }
     } catch (error) {
       console.error('Failed to create gratitude entry', error);
       toast.error('Could not save this gratitude moment.');
@@ -99,6 +138,19 @@ function GratitudePageInner() {
       setSubmitting(false);
     }
   };
+
+  const finishDeposit = useCallback(() => {
+    setJarPhase('absorb');
+    setPandaEmotion('happy');
+    setPandaAnimation('idle');
+    flashWhisper('saved');
+    toast.success('Moment saved in your jar.');
+    setDeposit(null);
+    window.setTimeout(() => {
+      setJarPhase('idle');
+      setPandaEmotion('calm');
+    }, 320);
+  }, []);
 
   const handlePickMemory = async () => {
     if (!entries.length) {
@@ -108,58 +160,95 @@ function GratitudePageInner() {
     }
 
     setPicking(true);
-    setJarActive(true);
-    setOverallReview(null);
-    setReviewDialogOpen(false);
+    setRevealed(null);
+    setWhisperLine(null);
+    setCompanionStage('reach');
+    flashWhisper('choosing');
+    setPandaEmotion('curious');
+    setPandaAnimation('bounce');
+    setJarPhase('resonate');
+
+    const mouth = getElementCenter(jarRef.current?.getMouthElement() ?? null);
 
     try {
       const result = await apiClient.getRandomGratitudeFeedback();
-      setRevealed(result.entry);
-      setWhisperLine(result.feedback?.trim() ? result.feedback : null);
-      flashWhisper('found');
       await apiClient.recordActivity('gratitude', {
         action: 'random_reflection',
         entryId: result.entry.id,
         thankfulnessScore: result.thankfulnessScore,
       });
+
+      const feedback = result.feedback?.trim() ? result.feedback : null;
+      if (mouth) {
+        setPendingReveal({ entry: result.entry, feedback });
+        setPandaEmotion('thinking');
+        setPandaAnimation('tilt');
+        await new Promise((r) => window.setTimeout(r, 160));
+        setRetrieve({
+          mouth: getElementCenter(jarRef.current?.getMouthElement() ?? null) ?? mouth,
+          entry: result.entry,
+          feedback,
+        });
+      } else {
+        setJarPhase('idle');
+        setCompanionStage('offer');
+        setRevealed(result.entry);
+        setWhisperLine(feedback);
+        flashWhisper('found');
+        setPandaEmotion('happy');
+        setPandaAnimation('wave');
+      }
     } catch (error) {
       console.error('Failed to fetch random gratitude feedback', error);
       const local = pickLocalRandom(entries);
-      if (local) {
+      if (local && mouth) {
+        setPendingReveal({ entry: local, feedback: null });
+        setPandaEmotion('thinking');
+        setPandaAnimation('tilt');
+        await new Promise((r) => window.setTimeout(r, 160));
+        setRetrieve({
+          mouth: getElementCenter(jarRef.current?.getMouthElement() ?? null) ?? mouth,
+          entry: local,
+          feedback: null,
+        });
+        toast.message('Panda found a memory in your jar.');
+      } else if (local) {
+        setCompanionStage('offer');
         setRevealed(local);
         setWhisperLine(null);
         flashWhisper('found');
-        toast.message('Opened a memory from your jar.');
+        setJarPhase('idle');
+        setPandaEmotion('happy');
+        setPandaAnimation('wave');
+        toast.message('Panda found a memory in your jar.');
       } else {
         toast.error('Could not pick a memory right now.');
+        setJarPhase('idle');
+        setCompanionStage('rest');
+        setPandaEmotion('calm');
+        setPandaAnimation('idle');
       }
     } finally {
       setPicking(false);
-      window.setTimeout(() => setJarActive(false), 1600);
     }
   };
 
-  const handleOverallReview = async () => {
-    if (!entries.length) {
-      toast.message('Add a few moments first to generate a quiet review.');
-      return;
-    }
-    setReviewing(true);
-    try {
-      const result = await apiClient.getOverallGratitudeReview();
-      setOverallReview(result);
-      setReviewDialogOpen(true);
-      await apiClient.recordActivity('gratitude', {
-        action: 'overall_review',
-        entriesCount: result.entriesCount,
-      });
-    } catch (error) {
-      console.error('Failed to fetch overall gratitude review', error);
-      toast.error('Could not generate the overall review now.');
-    } finally {
-      setReviewing(false);
-    }
-  };
+  const onRetrieveReady = useCallback(() => {
+    const pending = pendingRevealRef.current;
+    if (!pending) return;
+    setCompanionStage('offer');
+    setRevealed(pending.entry);
+    setWhisperLine(pending.feedback);
+    setPandaEmotion('happy');
+    setPandaAnimation('wave');
+    flashWhisper('found');
+  }, []);
+
+  const finishRetrieve = useCallback(() => {
+    setRetrieve(null);
+    setPendingReveal(null);
+    setJarPhase('idle');
+  }, []);
 
   const handleDeleteRevealed = async () => {
     if (!revealed?.id) return;
@@ -168,6 +257,9 @@ function GratitudePageInner() {
       setEntries((prev) => prev.filter((entry) => entry.id !== revealed.id));
       setRevealed(null);
       setWhisperLine(null);
+      setCompanionStage('rest');
+      setPandaEmotion('calm');
+      setPandaAnimation('idle');
       toast.success('Moment removed from your jar.');
     } catch (error) {
       console.error('Failed to delete gratitude entry', error);
@@ -178,6 +270,9 @@ function GratitudePageInner() {
   const closeReveal = () => {
     setRevealed(null);
     setWhisperLine(null);
+    setCompanionStage('rest');
+    setPandaEmotion('calm');
+    setPandaAnimation('idle');
   };
 
   const greetingName = useMemo(() => {
@@ -193,8 +288,8 @@ function GratitudePageInner() {
       className={cn(
         'relative min-h-dvh overflow-x-hidden',
         'bg-[hsl(38,40%,99%)]',
-        'pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-16',
-        'pt-6 md:pt-10',
+        'pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-12',
+        'pt-5 md:pt-8',
       )}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
@@ -207,87 +302,76 @@ function GratitudePageInner() {
         />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-[1200px] space-y-10 px-4 sm:px-6 md:space-y-12 lg:px-8">
+      <div className="relative z-10 mx-auto flex w-full max-w-[720px] flex-col items-center px-4 sm:px-6 lg:px-8">
+        <div className="w-full">
+          <ZenBackLink section="Gratitude" className="mb-2" />
+        </div>
+
         <GratitudeHeader
+          className="mt-4 w-full"
           greetingName={greetingName}
           onAdd={() => setComposerOpen(true)}
           onPick={() => void handlePickMemory()}
-          picking={picking}
-          canPick={hasEntries && !loading}
+          picking={picking || Boolean(retrieve)}
+          canPick={hasEntries && !loading && !deposit && !retrieve}
         />
 
-        <section className="flex flex-col items-center gap-8">
+        <section className="mt-8 flex w-full flex-col items-center md:mt-10">
           {loading ? (
-            <ZenSkeleton className="h-72 w-full max-w-sm" rounded="2xl" />
+            <ZenSkeleton className="h-72 w-full max-w-[220px]" rounded="2xl" />
           ) : (
-            <GratitudeJar entryCount={entries.length} active={jarActive || Boolean(revealed)} />
+            <GratitudeJar
+              ref={jarRef}
+              entryCount={entries.length}
+              active={jarPhase !== 'idle' || Boolean(revealed)}
+              phase={jarPhase}
+            />
           )}
+        </section>
+      </div>
 
+      <GratitudeCompanion
+        key={whisperPulse}
+        whisper={companionWhisper}
+        visible={!loading}
+        emotion={pandaEmotion}
+        animation={pandaAnimation}
+        stage={companionStage}
+      >
+        {revealed ? (
           <MemoryReveal
             entry={revealed}
             whisper={whisperLine}
             onClose={closeReveal}
             onDelete={() => void handleDeleteRevealed()}
           />
-
-          {hasEntries ? (
-            <GratitudeCompanion
-              key={whisperPulse}
-              whisper={companionWhisper}
-              visible
-            />
-          ) : null}
-        </section>
-
-        <RecentMoments
-          entries={entries}
-          loading={loading}
-          onAdd={() => setComposerOpen(true)}
-          onOpen={(entry) => {
-            setRevealed(entry);
-            setWhisperLine(null);
-          }}
-          onReview={() => void handleOverallReview()}
-          reviewing={reviewing}
-        />
-      </div>
+        ) : null}
+      </GratitudeCompanion>
 
       <AddGratitudeDialog
+        ref={dialogPanelRef}
         open={composerOpen}
         onOpenChange={setComposerOpen}
         onSubmit={handleCreateEntry}
         submitting={submitting}
       />
 
-      <ZenDialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
-        <ZenDialogContent className="sm:max-w-2xl">
-          <ZenDialogHeader>
-            <ZenDialogTitle className="font-display">Quiet jar review</ZenDialogTitle>
-            <ZenDialogDescription>
-              A gentle look across the moments you&apos;ve kept.
-            </ZenDialogDescription>
-          </ZenDialogHeader>
+      {deposit ? (
+        <DepositRitual
+          source={deposit.source}
+          mouth={deposit.mouth}
+          preview={deposit.preview}
+          onComplete={finishDeposit}
+        />
+      ) : null}
 
-          {overallReview ? (
-            <div className="space-y-3">
-              <p className="font-ui text-sm text-zen-fg-muted">
-                Moments considered: {overallReview.entriesCount}
-              </p>
-              <p className="whitespace-pre-wrap font-display text-[1.0625rem] leading-relaxed text-zen-fg">
-                {overallReview.review}
-              </p>
-            </div>
-          ) : (
-            <ZenSkeleton className="h-40 w-full" rounded="xl" />
-          )}
-
-          <div className="mt-4 flex justify-end">
-            <ZenButton variant="outline" onClick={() => setReviewDialogOpen(false)}>
-              Close
-            </ZenButton>
-          </div>
-        </ZenDialogContent>
-      </ZenDialog>
+      {retrieve ? (
+        <RetrieveRitual
+          mouth={retrieve.mouth}
+          onReadyToReveal={onRetrieveReady}
+          onComplete={finishRetrieve}
+        />
+      ) : null}
     </ZenPage>
   );
 }

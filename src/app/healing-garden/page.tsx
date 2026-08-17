@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
 import { trackEngagement } from '@/lib/signals';
 import ModulePage from '@/components/ui/ModulePage';
 import { getTheme } from '@/lib/moduleThemes';
+import { ZenBackLink } from '@/components/zen';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -139,7 +139,6 @@ export default function HealingGardenPage() {
   const [adding, setAdding]     = useState(false);
   const [newTreeId, setNewTreeId] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const router = useRouter();
   const startTime = useRef(Date.now());
 
   const trees  = tasks.filter(t => t.completed);
@@ -239,14 +238,7 @@ export default function HealingGardenPage() {
       <div className="min-h-screen" style={{ background: 'transparent', color: theme.textPrimary }}>
         <div className="max-w-5xl mx-auto px-5 py-10 pb-20">
 
-        {/* Back */}
-        <button
-          onClick={() => router.back()}
-          className="text-sm mb-8 opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1"
-          style={{ color: '#ede4d3' }}
-        >
-          ← Back
-        </button>
+        <ZenBackLink section="Healing Garden" className="mb-8" />
 
         {/* Header */}
         <header className="text-center mb-6">

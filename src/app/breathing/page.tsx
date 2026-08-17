@@ -7,7 +7,7 @@ import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { apiClient } from '@/lib/apiClient';
 import type { BreathingPattern } from '@/lib/types';
-import { ZenPage, ZenButton } from '@/components/zen';
+import { ZenPage, ZenButton, ZenBackLink } from '@/components/zen';
 import { cn } from '@/lib/utils';
 import { BreathingHeader } from './components/BreathingHeader';
 import { QuickBreathingSession } from './components/QuickBreathingSession';
@@ -112,6 +112,7 @@ function BreathingPageInner() {
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
+        <ZenBackLink section="Breathe" className="mb-4" />
         <BreathingHeader />
 
         {error ? (

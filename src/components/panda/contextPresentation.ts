@@ -41,9 +41,9 @@ const PATH_PRESENTATION: Array<{
   {
     match: /^\/journal(\/|$)/,
     presentation: {
-      emotion: 'thinking',
+      emotion: 'calm',
       activity: 'writing',
-      animation: 'writing',
+      animation: 'idle',
       mode: 'responsive',
     },
   },
@@ -132,6 +132,7 @@ const COMPANION_DENY = [
   /^\/breathing(\/|$)/,
   /^\/journal(\/|$)/,
   /^\/gratitude(\/|$)/,
+  /^\/burst(\/|$)/,
   /^\/dev\/panda(\/|$)/,
   /^\/chat(\/|$)/,
   /^\/signin(\/|$)/,

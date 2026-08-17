@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Activity,
   Bell,
   BookOpen,
   Bot,
@@ -39,7 +38,6 @@ const NAV_GROUPS = [
   {
     label: 'Wellness',
     items: [
-      { href: '/assessment',   label: 'Stress Check',  icon: Activity, description: 'Track your stress levels' },
       { href: '/breathing',    label: 'Breathe',        icon: Wind,     description: 'Breathing exercises' },
       { href: '/meditation',   label: 'Meditate',       icon: Sparkles, description: 'Guided meditation sessions' },
     ],

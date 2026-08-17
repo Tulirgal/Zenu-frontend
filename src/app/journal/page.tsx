@@ -1,21 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
 
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { apiClient } from '@/lib/apiClient';
 import type { JournalEntry } from '@/lib/types';
-import { ZenPage, ZenButton } from '@/components/zen';
-import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { ZenPage, ZenBackLink } from '@/components/zen';
 import { cn } from '@/lib/utils';
-import { JournalHeader } from './components/JournalHeader';
-import { WritePromptCard } from './components/WritePromptCard';
-import { RecentReflections } from './components/RecentReflections';
-import { EntryReader } from './components/EntryReader';
-import { WriteEditDialog, DeleteConfirmDialog } from './components/WriteEditDialog';
+import { DeleteConfirmDialog } from './components/WriteEditDialog';
+import { JournalBook } from './components/book/JournalBook';
 import {
   defaultFormState,
   type EntryFormMode,
@@ -24,16 +19,13 @@ import {
 
 function JournalContent() {
   const { user } = useAuth();
-  const reducedMotion = usePrefersReducedMotion();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
-  const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<EntryFormMode>('create');
   const [formValues, setFormValues] = useState<EntryFormState>(defaultFormState);
   const [formSubmitting, setFormSubmitting] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<JournalEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -57,32 +49,10 @@ function JournalContent() {
     void loadEntries();
   }, [user, loadEntries]);
 
-  const openCreateDialog = () => {
-    setFormMode('create');
-    setFormValues(defaultFormState);
-    setFormOpen(true);
-  };
-
-  const openEditDialog = (entry: JournalEntry) => {
-    setFormMode('edit');
-    setFormValues({
-      id: entry.id,
-      mood: entry.mood ?? null,
-      title: entry.title ?? '',
-      content: entry.content ?? '',
-    });
-    setFormOpen(true);
-  };
-
-  const closeForm = () => {
-    setFormOpen(false);
-    setFormSubmitting(false);
-  };
-
-  const handleFormSubmit = async () => {
+  const handleSave = async (): Promise<boolean> => {
     if (!formValues.content.trim()) {
       toast.error('Please write something before saving.');
-      return;
+      return false;
     }
     setFormSubmitting(true);
     try {
@@ -93,8 +63,7 @@ function JournalContent() {
           content: formValues.content,
         });
         setEntries((prev) => [created, ...prev]);
-        setSelectedEntry(created);
-        toast.success('Reflection saved.');
+        toast.success('Kept safely.');
       } else if (formValues.id) {
         const updated = await apiClient.updateJournalEntry(formValues.id, {
           mood: formValues.mood || null,
@@ -102,14 +71,19 @@ function JournalContent() {
           content: formValues.content,
         });
         setEntries((prev) => prev.map((entry) => (entry.id === updated.id ? updated : entry)));
-        setSelectedEntry(updated);
-        toast.success('Reflection updated.');
+        toast.success('Kept safely.');
+      } else {
+        setFormSubmitting(false);
+        return false;
       }
-      closeForm();
+      setFormSubmitting(false);
+      setFormValues(defaultFormState);
+      return true;
     } catch (err) {
       console.error('Failed to save journal entry', err);
       toast.error('Unable to save your entry.');
       setFormSubmitting(false);
+      return false;
     }
   };
 
@@ -119,7 +93,6 @@ function JournalContent() {
     try {
       await apiClient.deleteJournalEntry(deleteTarget.id);
       setEntries((prev) => prev.filter((item) => item.id !== deleteTarget.id));
-      if (selectedEntry?.id === deleteTarget.id) setSelectedEntry(null);
       toast.success('Reflection deleted.');
       setDeleteTarget(null);
     } catch (err) {
@@ -129,8 +102,6 @@ function JournalContent() {
       setDeleting(false);
     }
   };
-
-  const reading = Boolean(selectedEntry);
 
   return (
     <ZenPage
@@ -147,72 +118,43 @@ function JournalContent() {
           className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(ellipse 900px 480px at 10% 0%, hsl(262 40% 72% / 0.1), transparent 60%), radial-gradient(ellipse 700px 400px at 90% 20%, hsl(40 50% 88% / 0.45), transparent 55%)',
+              'radial-gradient(ellipse 900px 480px at 10% 0%, hsl(32 40% 78% / 0.16), transparent 60%), radial-gradient(ellipse 700px 400px at 90% 20%, hsl(40 50% 88% / 0.45), transparent 55%)',
           }}
         />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
-        <AnimatePresence mode="wait">
-          {reading && selectedEntry ? (
-            <motion.div
-              key="reader"
-              initial={reducedMotion ? { opacity: 0 } : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: reducedMotion ? 0.12 : 0.25 }}
+      <div className="relative z-10 mx-auto w-full max-w-[1200px] space-y-6 px-4 sm:px-6 lg:px-8">
+        <ZenBackLink section="Journal" className="mb-2" />
+
+        {loadError ? (
+          <div className="rounded-zen-xl border border-zen-danger/20 bg-zen-danger-soft/40 px-5 py-4 text-center">
+            <p className="font-ui text-sm text-zen-danger">
+              We couldn&apos;t load your reflections.
+            </p>
+            <button
+              type="button"
+              className="mt-4 font-ui text-sm text-zen-fg underline"
+              onClick={() => void loadEntries()}
             >
-              <EntryReader
-                entry={selectedEntry}
-                onBack={() => setSelectedEntry(null)}
-                onEdit={openEditDialog}
-                onDelete={setDeleteTarget}
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="list"
-              initial={reducedMotion ? { opacity: 0 } : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: reducedMotion ? 0.12 : 0.25 }}
-              className="space-y-10 md:space-y-12"
-            >
-              <JournalHeader />
+              Try again
+            </button>
+          </div>
+        ) : null}
 
-              {loadError ? (
-                <div className="rounded-zen-xl border border-zen-danger/20 bg-zen-danger-soft/40 px-5 py-4 text-center">
-                  <p className="font-ui text-sm text-zen-danger">
-                    We couldn&apos;t load your reflections.
-                  </p>
-                  <ZenButton variant="outline" className="mt-4" onClick={loadEntries}>
-                    Try again
-                  </ZenButton>
-                </div>
-              ) : null}
-
-              <WritePromptCard onWrite={openCreateDialog} />
-
-              <RecentReflections
-                entries={entries}
-                loading={loading}
-                onOpen={setSelectedEntry}
-                onWrite={openCreateDialog}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <JournalBook
+          entries={entries}
+          loading={loading}
+          loadError={loadError}
+          onRetry={loadEntries}
+          formMode={formMode}
+          formValues={formValues}
+          formSubmitting={formSubmitting}
+          onFormChange={setFormValues}
+          onFormModeChange={setFormMode}
+          onSave={handleSave}
+          onRequestDelete={setDeleteTarget}
+        />
       </div>
-
-      <WriteEditDialog
-        open={formOpen}
-        mode={formMode}
-        values={formValues}
-        submitting={formSubmitting}
-        onOpenChange={(open) => (!open ? closeForm() : setFormOpen(open))}
-        onChange={setFormValues}
-        onSubmit={() => void handleFormSubmit()}
-      />
 
       <DeleteConfirmDialog
         open={Boolean(deleteTarget)}

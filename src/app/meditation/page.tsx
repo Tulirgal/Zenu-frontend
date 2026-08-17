@@ -44,7 +44,7 @@ function MeditationPageInner() {
   const session = meditations[0] ?? null;
 
   return (
-    <ZenFocusMode title="Mindfulness Studio">
+    <ZenFocusMode title="Meditate">
       <ZenPage
         atmosphere="home"
         className={cn(

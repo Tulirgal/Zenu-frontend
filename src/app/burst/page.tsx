@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { trackEngagement } from '@/lib/signals';
-import { ZenPage, ZenContainer, ZenButton, ZenTextarea } from '@/components/zen';
+import { ZenPage, ZenButton, ZenBackLink } from '@/components/zen';
 import ModulePage from '@/components/ui/ModulePage';
 import { getTheme } from '@/lib/moduleThemes';
+import { cn } from '@/lib/utils';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { BurstCompanion, type BurstPhase } from './components/BurstCompanion';
+import { BurstBubble } from './components/BurstBubble';
+import { BurstComposer } from './components/BurstComposer';
 
 const AFFIRMATIONS = [
   'That feeling no longer owns you. You released it.',
@@ -20,14 +23,19 @@ const AFFIRMATIONS = [
   'You just made space for something better.',
 ];
 
-type Phase = 'typing' | 'traveling' | 'expanding' | 'popping' | 'affirming';
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 export default function BurstItOutPage() {
+  const reducedMotion = usePrefersReducedMotion();
   const [thought, setThought] = useState('');
-  const [phase, setPhase] = useState<Phase>('typing');
+  const [phase, setPhase] = useState<BurstPhase>('typing');
   const [affirmation, setAff] = useState('');
-  const [bubbleSize, setBubbleSize] = useState(80);
+  const [bubbleSize, setBubbleSize] = useState(96);
   const startTime = useRef(Date.now());
+  const busy = phase !== 'typing' && phase !== 'affirming';
+  const theme = getTheme('burst');
 
   useEffect(() => {
     trackEngagement('burst_it_out', 'opened');
@@ -36,27 +44,10 @@ export default function BurstItOutPage() {
   useEffect(() => {
     if (phase !== 'typing') return;
     const chars = thought.length;
-    const size = Math.min(80 + chars * 1.2, 220);
-    setBubbleSize(size);
+    setBubbleSize(Math.min(96 + chars * 1.05, 200));
   }, [thought, phase]);
 
-  const handleRelease = async () => {
-    if (!thought.trim() || phase !== 'typing') return;
-
-    const randomAff = AFFIRMATIONS[Math.floor(Math.random() * AFFIRMATIONS.length)];
-    setAff(randomAff);
-
-    setPhase('traveling');
-    await sleep(900);
-
-    setPhase('expanding');
-    setBubbleSize(320);
-    await sleep(1200);
-
-    setPhase('popping');
-    await sleep(600);
-
-    setPhase('affirming');
+  const finishRelease = () => {
     trackEngagement(
       'burst_it_out',
       'completed',
@@ -64,271 +55,177 @@ export default function BurstItOutPage() {
     );
   };
 
+  const handleRelease = async () => {
+    if (!thought.trim() || phase !== 'typing') return;
+
+    setAff(AFFIRMATIONS[Math.floor(Math.random() * AFFIRMATIONS.length)]);
+    setPhase('traveling');
+    await sleep(reducedMotion ? 400 : 850);
+
+    setPhase('expanding');
+    setBubbleSize(280);
+    await sleep(reducedMotion ? 500 : 1100);
+  };
+
+  const handlePop = async () => {
+    if (phase !== 'expanding') return;
+    setPhase('popping');
+    await sleep(reducedMotion ? 220 : 550);
+    setPhase('affirming');
+    finishRelease();
+  };
+
   const handleReset = () => {
     setThought('');
     setPhase('typing');
-    setBubbleSize(80);
+    setBubbleSize(96);
     setAff('');
     startTime.current = Date.now();
   };
 
-  const theme = getTheme('burst');
+  const statusLine =
+    phase === 'traveling'
+      ? 'Sending your thought into the bubble…'
+      : phase === 'expanding'
+        ? 'The bubble is full. Pop it when you’re ready.'
+        : null;
 
   return (
-    <ModulePage theme={theme}>
-      <ZenPage atmosphere="none" className="min-h-[calc(100dvh-4rem)]">
-      <ZenContainer maxWidth="xl" className="relative py-10 flex flex-col items-center">
-        <Link
-          href="/"
-          aria-label="Back to dashboard"
-          className="absolute top-4 left-4 inline-flex items-center gap-2 px-3 py-2 rounded-zen-full glass-floating shadow-zen-floating text-sm font-medium text-zen-fg hover:bg-white/95 active:scale-[0.97] transition-all duration-zen-fast focus-visible:outline-2 focus-visible:outline-zen-primary"
-        >
-          <ArrowLeft className="w-4 h-4 text-zen-fg-muted" aria-hidden="true" />
-          <span className="hidden sm:inline text-zen-fg-muted">ZenU</span>
-          <span className="h-3 w-px bg-zen-border hidden sm:block" aria-hidden="true" />
-          <span>Burst</span>
-        </Link>
+    <ModulePage
+      theme={theme}
+      className={cn(
+        // Same shell fill as Bubbles: cover main’s padding box so cream never peeks
+        'relative flex w-full flex-col overflow-x-hidden',
+        'max-md:absolute max-md:inset-0 max-md:overflow-y-auto',
+        'md:h-full md:min-h-0 md:flex-1',
+        // Keep composer/content clear of the floating bottom nav
+        'max-md:pb-[calc(5.5rem+env(safe-area-inset-bottom,0px)+1rem)]',
+        'md:pb-10',
+      )}
+    >
+      {/* Page shell — Back stays sticky in the scroll container, not inside the scene */}
+      <div
+        className={cn(
+          'sticky top-0 z-40 px-4 pt-3 pb-2 sm:px-6',
+          'supports-[backdrop-filter]:backdrop-blur-md',
+        )}
+        style={{
+          background:
+            'linear-gradient(180deg, rgba(10,5,20,0.92) 0%, rgba(30,16,53,0.78) 70%, rgba(30,16,53,0) 100%)',
+        }}
+      >
+        <div className="mx-auto max-w-3xl">
+          <ZenBackLink section="Burst" />
+        </div>
+      </div>
 
-        <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-white text-center mt-10 mb-3">Burst it out</h1>
-        <p className="text-lg md:text-xl text-purple-200 text-center mb-10 max-w-2xl">
-          Type what&apos;s weighing on you. Watch it go into the bubble. Then pop it.
-        </p>
+      <ZenPage atmosphere="none" className="relative w-full">
+        <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col px-4 pb-8 sm:px-6 md:pb-10">
+          <header className="pt-2 text-center md:pt-4">
+            <p className="font-ui text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-violet-200/85">
+              Let it go
+            </p>
+            <h1
+              className={cn(
+                'mt-2 font-display font-medium tracking-[-0.02em] text-white',
+                'text-[2rem] leading-[1.15] sm:text-[2.5rem] md:text-[2.75rem]',
+              )}
+            >
+              Burst it out
+            </h1>
+            <p className="mx-auto mt-2 max-w-md font-ui text-sm leading-relaxed text-violet-100/80 md:text-[0.9375rem]">
+              Write what’s heavy. Watch it rise. Pop the bubble and leave it behind.
+            </p>
+          </header>
 
-        <div className="relative flex flex-col items-center w-full max-w-4xl">
-          <div className="relative flex items-center justify-center mb-6" style={{ minHeight: 260 }}>
-            <AnimatePresence>
-              {phase !== 'affirming' && (
-                <motion.div
-                  key="bubble"
-                  className="relative flex items-center justify-center"
-                  animate={
-                    phase === 'popping'
-                      ? { scale: 1.1, opacity: 0 }
-                      : { scale: 1 }
-                  }
-                  transition={
-                    phase === 'popping'
-                      ? { duration: 0.08, ease: 'easeOut' }
-                      : { type: 'spring', stiffness: 80, damping: 14 }
-                  }
+          <section className="mt-6 flex flex-col items-center md:mt-8">
+            <BurstBubble phase={phase} size={bubbleSize} thought={thought} />
+
+            <BurstCompanion
+              phase={phase}
+              className={cn(
+                'mt-1 transition-opacity',
+                phase === 'affirming' ? 'opacity-100' : 'opacity-95',
+              )}
+            />
+
+            <AnimatePresence mode="wait">
+              {statusLine ? (
+                <motion.p
+                  key={statusLine}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="mt-3 font-ui text-sm italic text-violet-200/85"
                 >
-                  <motion.svg
-                    width={bubbleSize}
-                    height={bubbleSize}
-                    viewBox="0 0 200 200"
-                    animate={{ width: bubbleSize, height: bubbleSize }}
-                    transition={{ type: 'spring', stiffness: 60, damping: 12 }}
+                  {statusLine}
+                </motion.p>
+              ) : (
+                <div className="mt-3 h-5" aria-hidden="true" />
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {phase === 'expanding' ? (
+                <motion.div
+                  initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
+                  className="mt-2"
+                >
+                  <ZenButton
+                    type="button"
+                    variant="primary"
+                    size="lg"
+                    onClick={() => void handlePop()}
+                    className="min-w-[8.5rem] rounded-full"
                   >
-                    <defs>
-                      <radialGradient id="bubbleGrad" cx="35%" cy="30%">
-                        <stop offset="0%" stopColor="white" stopOpacity="0.9" />
-                        <stop offset="40%" stopColor="hsl(262 48% 70%)" stopOpacity="0.45" />
-                        <stop offset="100%" stopColor="hsl(262 48% 58%)" stopOpacity="0.3" />
-                      </radialGradient>
-                      <linearGradient id="rainbowStroke" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="hsl(var(--zen-secondary))" />
-                        <stop offset="50%" stopColor="hsl(var(--zen-primary))" />
-                        <stop offset="100%" stopColor="hsl(var(--zen-accent))" />
-                      </linearGradient>
-                    </defs>
-                    <circle
-                      cx="100"
-                      cy="100"
-                      r="95"
-                      fill="url(#bubbleGrad)"
-                      stroke="hsl(var(--zen-secondary))"
-                      strokeWidth="2"
-                      strokeOpacity="0.5"
-                    />
-                    <ellipse
-                      cx="70"
-                      cy="60"
-                      rx="18"
-                      ry="10"
-                      fill="white"
-                      opacity="0.55"
-                      transform="rotate(-30 70 60)"
-                    />
-                    <circle
-                      cx="100"
-                      cy="100"
-                      r="93"
-                      fill="none"
-                      stroke="url(#rainbowStroke)"
-                      strokeWidth="3"
-                      opacity="0.35"
-                    />
-                  </motion.svg>
-
-                  <AnimatePresence>
-                    {(phase === 'traveling' || phase === 'expanding') && thought && (
-                      <motion.div
-                        className="absolute inset-0 flex items-center justify-center px-4"
-                        initial={{ opacity: 1, scale: 1, y: 60 }}
-                        animate={
-                          phase === 'traveling'
-                            ? { opacity: 1, scale: 0.7, y: 10 }
-                            : { opacity: 0.6, scale: 0.5, y: 0 }
-                        }
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.8, ease: 'easeInOut' }}
-                      >
-                        <p className="text-center text-sm md:text-base text-white font-medium leading-snug max-w-[80%] break-words">
-                          {thought.length > 80 ? `${thought.slice(0, 80)}…` : thought}
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                    Pop it
+                  </ZenButton>
                 </motion.div>
-              )}
+              ) : null}
             </AnimatePresence>
 
             <AnimatePresence>
-              {phase === 'popping' && (
-                <>
-                  <motion.div
-                    className="absolute rounded-full border-2 border-zen-secondary/40"
-                    style={{ width: bubbleSize, height: bubbleSize }}
-                    initial={{ scale: 1, opacity: 0.7 }}
-                    animate={{ scale: 1.15, opacity: 0 }}
-                    transition={{ duration: 0.15, ease: 'easeOut' }}
-                  />
-                  {[...Array(24)].map((_, i) => {
-                    const angle = (i / 24) * 360;
-                    const rad = (angle * Math.PI) / 180;
-                    const startRadius = bubbleSize / 2;
-                    const endRadius = startRadius + 40 + Math.random() * 60;
-                    const startX = Math.cos(rad) * startRadius;
-                    const startY = Math.sin(rad) * startRadius;
-                    const endX = Math.cos(rad) * endRadius;
-                    const endY = Math.sin(rad) * endRadius + (40 + Math.random() * 80);
-                    const size = 3 + Math.random() * 5;
-
-                    return (
-                      <motion.div
-                        key={i}
-                        className="absolute rounded-full bg-zen-secondary"
-                        style={{ width: size, height: size }}
-                        initial={{ x: startX, y: startY, scale: 1, opacity: 0.9 }}
-                        animate={{ x: endX, y: endY, scale: 0, opacity: 0 }}
-                        transition={{ duration: 0.3 + Math.random() * 0.25, ease: 'easeOut' }}
-                      />
-                    );
-                  })}
-                </>
-              )}
-            </AnimatePresence>
-
-            <AnimatePresence>
-              {phase === 'affirming' && (
+              {phase === 'affirming' ? (
                 <motion.div
-                  className="flex flex-col items-center text-center px-4"
-                  initial={{ opacity: 0, scale: 0.9, y: 12 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.15 }}
+                  className="mt-2 flex max-w-lg flex-col items-center px-2 text-center"
+                  initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
                 >
-                  <p className="text-2xl md:text-3xl text-white font-medium leading-relaxed mb-6 max-w-lg font-serif">
+                  <p className="font-display text-xl leading-relaxed text-white md:text-2xl">
                     {affirmation}
                   </p>
-                  <ZenButton variant="secondary" onClick={handleReset}>
+                  <ZenButton
+                    type="button"
+                    variant="outline"
+                    className="mt-6 rounded-full border-white/30 bg-white/10 text-white hover:bg-white/18 hover:text-white"
+                    onClick={handleReset}
+                  >
                     Release another thought
                   </ZenButton>
                 </motion.div>
-              )}
+              ) : null}
             </AnimatePresence>
-          </div>
 
-          <AnimatePresence>
-            {phase === 'typing' && (
-              <motion.div
-                className="w-full"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-              >
-                <ZenTextarea
-                  value={thought}
-                  onChange={(e) => setThought(e.target.value)}
-                  placeholder="What's on your mind? Pour it all out here…"
-                  rows={4}
-                  maxLength={300}
-                  aria-label="Thought to release"
-                  className="text-lg md:text-xl p-4 md:p-5 text-gray-900 placeholder:text-gray-500 bg-white/95 backdrop-blur-sm leading-relaxed"
-                />
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-sm text-purple-300 font-medium">{thought.length}/300</span>
-                  <ZenButton
-                    variant="secondary"
-                    onClick={handleRelease}
-                    disabled={!thought.trim()}
-                  >
-                    Release it
-                  </ZenButton>
+            <AnimatePresence>
+              {phase === 'typing' ? (
+                <div className="mt-5 w-full md:mt-6">
+                  <BurstComposer
+                    value={thought}
+                    onChange={setThought}
+                    onRelease={() => void handleRelease()}
+                    disabled={busy}
+                  />
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence mode="wait">
-            {phase === 'traveling' && (
-              <motion.p
-                key="traveling"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="zen-body-sm text-purple-300 italic mt-4"
-              >
-                Sending your thought into the bubble…
-              </motion.p>
-            )}
-            {phase === 'expanding' && (
-              <motion.p
-                key="expanding"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="zen-body-sm text-purple-300 italic mt-4"
-              >
-                The bubble is filling up… ready to pop?
-              </motion.p>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {phase === 'expanding' && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.92 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ delay: 0.6 }}
-                className="mt-4"
-              >
-                <ZenButton
-                  variant="outline"
-                  onClick={async () => {
-                    setPhase('popping');
-                    await sleep(600);
-                    setPhase('affirming');
-                    trackEngagement(
-                      'burst_it_out',
-                      'completed',
-                      Math.round((Date.now() - startTime.current) / 1000),
-                    );
-                  }}
-                >
-                  Pop it
-                </ZenButton>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              ) : null}
+            </AnimatePresence>
+          </section>
         </div>
-      </ZenContainer>
       </ZenPage>
     </ModulePage>
   );
-}
-
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
 }

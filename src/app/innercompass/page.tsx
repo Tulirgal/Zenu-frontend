@@ -1,15 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import InnerCompassComponent from '@/components/InnerCompass';
 import { trackEngagement } from '@/lib/signals';
-import { ZenPage, ZenContainer, ZenButton } from '@/components/zen';
+import { ZenPage, ZenContainer, ZenBackLink } from '@/components/zen';
 
 const InnerCompass = () => {
-  const router = useRouter();
-
   useEffect(() => {
     trackEngagement('inner_compass', 'opened');
     const start = Date.now();
@@ -30,17 +26,7 @@ const InnerCompass = () => {
         maxWidth="full"
         className="relative z-10 mx-auto w-full max-w-[1320px] pt-3 pb-6 px-4 sm:px-5 md:pt-6 md:pb-16 md:px-8 lg:px-10"
       >
-        <ZenButton
-          variant="ghost"
-          size="sm"
-          className="mb-5 md:mb-6"
-          onClick={() => router.push('/')}
-          aria-label="Return to home"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Home
-        </ZenButton>
-
+        <ZenBackLink section="Inner Compass" className="mb-5 md:mb-6" />
         <InnerCompassComponent />
       </ZenContainer>
     </ZenPage>

@@ -24,12 +24,12 @@ const SPACE_ITEMS: SpaceItem[] = [
     featured: true,
   },
   {
-    href: '/scribble',
-    title: 'Scribble Pad',
-    description: 'Let the line wander without a plan.',
-    identity: 'scribble',
-    accentClass: 'text-zen-emotion-sadness',
-    glowClass: 'from-zen-emotion-sadness-soft',
+    href: '/chat',
+    title: 'Seviyan',
+    description: 'Talk it through with a calm companion.',
+    identity: 'seviyan',
+    accentClass: 'text-zen-emotion-okay',
+    glowClass: 'from-zen-emotion-okay-soft',
     featured: true,
   },
   {
@@ -89,16 +89,19 @@ function SpaceMark({ identity, compact }: { identity: string; compact?: boolean 
           ))}
         </svg>
       );
-    case 'scribble':
+    case 'seviyan':
       return (
-        <svg viewBox="0 0 64 40" className={cn(compact ? 'h-8 w-12' : 'h-10 w-16', 'opacity-80')} aria-hidden="true">
+        <svg viewBox="0 0 64 56" className={cn(compact ? 'h-9 w-10' : 'h-11 w-12', 'opacity-80')} aria-hidden="true">
           <path
-            d="M4 28 C14 8, 22 36, 32 18 S52 6, 60 22"
+            d="M10 14h36a8 8 0 0 1 8 8v12a8 8 0 0 1-8 8H28l-10 10v-10H10a8 8 0 0 1-8-8V22a8 8 0 0 1 8-8z"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
           />
+          <circle cx="22" cy="28" r="2.2" fill="currentColor" />
+          <circle cx="32" cy="28" r="2.2" fill="currentColor" />
+          <circle cx="42" cy="28" r="2.2" fill="currentColor" />
         </svg>
       );
     case 'burst':
@@ -160,12 +163,6 @@ export function HomeYourSpace({ className }: { className?: string }) {
         >
           Your wellness space
         </h2>
-        <Link
-          href="/bubbles"
-          className="font-ui text-[0.8125rem] md:text-[0.9375rem] text-zen-secondary hover:text-zen-fg transition-colors focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2 rounded-sm"
-        >
-          Explore all →
-        </Link>
       </div>
 
       <div

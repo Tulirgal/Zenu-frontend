@@ -31,18 +31,18 @@ export function MemoryReveal({
           role="dialog"
           aria-modal="false"
           aria-labelledby="memory-reveal-title"
-          initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
+          initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
           transition={
             reducedMotion
               ? { duration: 0.15 }
-              : { type: 'spring', stiffness: 280, damping: 28 }
+              : { type: 'spring', stiffness: 280, damping: 26 }
           }
           className={cn(
-            'relative mx-auto w-full max-w-md overflow-hidden rounded-zen-xl',
+            'relative w-full overflow-hidden rounded-zen-xl',
             'border border-[hsl(32_40%_80%/0.6)] bg-[hsl(40_45%_97%)]',
-            'px-5 py-5 shadow-[0_20px_48px_-28px_rgba(80,50,20,0.35)]',
+            'px-4 py-4 shadow-[0_20px_48px_-28px_rgba(80,50,20,0.35)]',
             className,
           )}
         >
@@ -57,11 +57,11 @@ export function MemoryReveal({
           <div className="relative flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="font-ui text-[0.6875rem] font-medium uppercase tracking-[0.12em] text-[hsl(28_55%_42%)]">
-                A memory from your jar
+                Panda chose this for you
               </p>
               <h2
                 id="memory-reveal-title"
-                className="mt-1 font-display text-xl tracking-[-0.01em] text-zen-fg md:text-[1.375rem]"
+                className="mt-1 font-display text-lg tracking-[-0.01em] text-zen-fg md:text-xl"
               >
                 {entry.title?.trim() || 'Untitled moment'}
               </h2>
@@ -83,22 +83,22 @@ export function MemoryReveal({
             </ZenButton>
           </div>
 
-          <p className="relative mt-4 whitespace-pre-wrap font-display text-[1.0625rem] leading-relaxed text-zen-fg">
+          <p className="relative mt-3 whitespace-pre-wrap font-display text-[1rem] leading-relaxed text-zen-fg">
             {entry.content}
           </p>
 
           {whisper?.trim() ? (
-            <p className="relative mt-4 border-t border-[hsl(32_30%_85%)] pt-3 font-ui text-sm leading-relaxed text-zen-fg-muted">
+            <p className="relative mt-3 border-t border-[hsl(32_30%_85%)] pt-3 font-ui text-sm leading-relaxed text-zen-fg-muted">
               {whisper.trim()}
             </p>
           ) : null}
 
-          <div className="relative mt-5 flex flex-wrap gap-2">
-            <ZenButton type="button" variant="outline" onClick={onClose}>
+          <div className="relative mt-4 flex flex-wrap gap-2">
+            <ZenButton type="button" variant="outline" size="sm" onClick={onClose}>
               Put it back
             </ZenButton>
             {onDelete ? (
-              <ZenButton type="button" variant="destructive" onClick={onDelete}>
+              <ZenButton type="button" variant="destructive" size="sm" onClick={onDelete}>
                 <Trash2 className="h-4 w-4" aria-hidden="true" />
                 Delete
               </ZenButton>
