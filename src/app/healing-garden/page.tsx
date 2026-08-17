@@ -117,8 +117,14 @@ function buildGardenSVG(tasks: Task[]): string {
   }
 
   let content = '';
+  const availableWidth = W - 120;
+  const maxSpacing = 85;
+  const spacing = Math.min(availableWidth / n, maxSpacing);
+  const totalWidth = spacing * n;
+  const startX = (W - totalWidth) / 2;
+
   items.forEach((task, i) => {
-    const x = 60 + (i + 0.5) * ((W - 120) / n);
+    const x = startX + (i + 0.5) * spacing;
     const rng = mulberry32(hashStr(task.id));
     if (task.completed) {
       const scale = 0.85 + rng() * 0.5;
@@ -276,19 +282,20 @@ export default function HealingGardenPage() {
 
         {/* Garden Scene */}
         <div
-          className="relative w-full rounded-2xl overflow-hidden mb-6"
+          className="relative w-full rounded-2xl overflow-x-auto overflow-y-hidden mb-6 scrollbar-thin"
           style={{
             height: 300,
             background: 'linear-gradient(180deg, #1c2a38 0%, #3a4a5a 55%, #c98a4b 100%)',
             boxShadow: '0 20px 50px -20px rgba(0,0,0,0.6)',
           }}
         >
-          <svg
-            ref={svgRef}
-            viewBox="0 0 900 340"
-            preserveAspectRatio="xMidYMax slice"
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-          />
+          <div className="relative h-full w-full min-w-[760px]">
+            <svg
+              ref={svgRef}
+              viewBox="0 0 900 340"
+              preserveAspectRatio="xMidYMax slice"
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+            />
 
           {/* Fireflies */}
           {[...Array(5)].map((_, i) => (
@@ -335,6 +342,7 @@ export default function HealingGardenPage() {
               Plant your first task below to begin your garden.
             </div>
           )}
+          </div>
         </div>
 
         {/* Add task form */}
