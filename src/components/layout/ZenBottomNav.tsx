@@ -14,7 +14,6 @@ import {
 import { useAuth } from '@/components/providers/AuthProvider';
 import { cn } from '@/lib/utils';
 import { isZenFocusRoute } from '@/lib/zenFocus';
-import { getTheme } from '@/lib/moduleThemes';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 const BOTTOM_NAV = [
@@ -34,28 +33,9 @@ export default function ZenBottomNav() {
 
   if (!user || isZenFocusRoute(pathname)) return null;
 
-  const getModuleKey = () => {
-    if (!pathname || pathname === '/') return 'home';
-    if (pathname.startsWith('/breathing')) return 'breathing';
-    if (pathname.startsWith('/meditation')) return 'mindfulness';
-    if (pathname.startsWith('/journal')) return 'diary';
-    if (pathname.startsWith('/art')) return 'doodle';
-    if (pathname.startsWith('/healing-garden')) return 'healing-garden';
-    if (pathname.startsWith('/innercompass')) return 'innercompass';
-    return 'home';
-  };
-
-  const theme = getTheme(getModuleKey());
-
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-50 md:hidden border-t pb-safe shadow-zen-floating"
-      style={{
-        background: theme.cardBg,
-        borderColor: theme.cardBorder,
-        backdropFilter: 'blur(32px) saturate(220%)',
-        WebkitBackdropFilter: 'blur(32px) saturate(220%)',
-      }}
+      className="fixed bottom-0 inset-x-0 z-50 md:hidden glass-floating border-t border-white/60 pb-safe"
       aria-label="Mobile navigation"
     >
       <div className="flex items-stretch h-16 min-h-16">
@@ -74,23 +54,18 @@ export default function ZenBottomNav() {
               aria-current={active ? 'page' : undefined}
               className={cn(
                 'flex flex-col items-center justify-center gap-0.5 flex-1 relative',
-                'min-h-11 transition-all duration-200',
-                'focus-visible:outline-2 focus-visible:outline-offset-[-2px]',
-                !active && 'opacity-60 hover:opacity-100',
+                'min-h-11 transition-colors duration-100',
+                'focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-[-2px]',
+                active ? 'text-zen-secondary' : 'text-zen-fg-subtle hover:text-zen-fg-muted',
               )}
-              style={{
-                outlineColor: theme.accentColor,
-                color: active ? theme.accentColor : theme.textPrimary,
-              }}
             >
               {active && (
                 reducedMotion ? (
-                  <div className="absolute inset-x-3 inset-y-2 rounded-zen-md" style={{ background: theme.accentLight }} />
+                  <div className="absolute inset-x-3 inset-y-2 rounded-zen-md bg-zen-secondary-soft" />
                 ) : (
                   <motion.div
                     layoutId="zen-bottom-nav-pill"
-                    className="absolute inset-x-3 inset-y-2 rounded-zen-md"
-                    style={{ background: theme.accentLight }}
+                    className="absolute inset-x-3 inset-y-2 rounded-zen-md bg-zen-secondary-soft"
                     transition={springIcon}
                   />
                 )
@@ -102,18 +77,17 @@ export default function ZenBottomNav() {
                 className="relative z-10"
               >
                 <Icon
-                  className="h-5 w-5"
-                  style={{
-                    fill: active ? theme.accentLight : 'transparent'
-                  }}
+                  className={cn('h-5 w-5', active && 'fill-zen-secondary/10')}
                   strokeWidth={active ? 2.2 : 1.8}
                   aria-hidden="true"
                 />
               </motion.div>
 
               <span
-                className="relative z-10 text-[10px] font-medium leading-none tracking-wide"
-                style={{ color: active ? theme.accentColor : theme.textPrimary }}
+                className={cn(
+                  'relative z-10 text-[10px] font-medium leading-none tracking-wide',
+                  active ? 'text-zen-secondary' : 'text-zen-fg-subtle',
+                )}
               >
                 {label}
               </span>
