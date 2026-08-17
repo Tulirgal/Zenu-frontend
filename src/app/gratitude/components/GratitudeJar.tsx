@@ -117,20 +117,12 @@ export const GratitudeJar = forwardRef<
               const rot = ((i * 17) % 40) - 20;
               const hue = 28 + (i % 5) * 8;
               return (
-                <motion.rect
+                <motion.g
                   key={i}
-                  x={x}
-                  y={y}
-                  width={22}
-                  height={14}
-                  rx={2}
-                  fill={`hsl(${hue} 55% ${88 - (i % 3) * 4}%)`}
-                  stroke={`hsl(${hue} 35% 70% / 0.4)`}
-                  strokeWidth={0.8}
                   animate={
                     busy && !reducedMotion
-                      ? { y: [y, y - 4, y], rotate: [rot, rot + 3, rot] }
-                      : { y, rotate: rot }
+                      ? { y: [0, -4, 0], rotate: [rot, rot + 3, rot] }
+                      : { y: 0, rotate: rot }
                   }
                   transition={
                     reducedMotion
@@ -144,7 +136,18 @@ export const GratitudeJar = forwardRef<
                         }
                   }
                   style={{ transformOrigin: `${x + 11}px ${y + 7}px` }}
-                />
+                >
+                  <rect
+                    x={x}
+                    y={y}
+                    width={22}
+                    height={14}
+                    rx={2}
+                    fill={`hsl(${hue} 55% ${88 - (i % 3) * 4}%)`}
+                    stroke={`hsl(${hue} 35% 70% / 0.4)`}
+                    strokeWidth={0.8}
+                  />
+                </motion.g>
               );
             })}
           </g>
