@@ -37,9 +37,11 @@ export function BurstBubble({
   const showThought = phase === 'traveling' || phase === 'expanding';
 
   return (
-    <div
+    <motion.div
+      layout
       className={cn(
-        'relative flex min-h-[240px] w-full items-center justify-center md:min-h-[280px]',
+        'relative flex w-full items-center justify-center',
+        phase !== 'affirming' ? 'min-h-[240px] md:min-h-[280px]' : 'min-h-0 h-0 overflow-hidden',
         className,
       )}
     >
@@ -165,6 +167,6 @@ export function BurstBubble({
           </>
         ) : null}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
