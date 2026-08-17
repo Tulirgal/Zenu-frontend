@@ -1,12 +1,19 @@
-'use client';
+import os
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+file_path = "src/components/home/HomeYourSpace.tsx"
+with open(file_path, "r", encoding="utf-8") as f:
+    content = f.read()
 
-const ALL_MODULES = [
+# Add imports
+if "import { useState } from 'react';" not in content:
+    content = content.replace("import Link from 'next/link';", "import { useState } from 'react';\nimport Link from 'next/link';\nimport { motion, AnimatePresence } from 'framer-motion';\nimport { ChevronDown } from 'lucide-react';")
+else:
+    # already has useState, add others if missing
+    if "framer-motion" not in content:
+        content = content.replace("import Link from 'next/link';", "import Link from 'next/link';\nimport { motion, AnimatePresence } from 'framer-motion';\nimport { ChevronDown } from 'lucide-react';")
+
+# Define ALL_MODULES
+all_modules = """const ALL_MODULES = [
   { id: 'breathing', name: 'Zen Breath Zone', description: 'A gentle rhythm for your nervous system.', route: '/breathing', icon: '🌬️' },
   { id: 'mindfulness', name: 'Meditate', description: 'Stillness in a few quiet minutes.', route: '/mindfulness', icon: '🧘' },
   { id: 'chatbot_seviyan', name: 'Seviyan', description: 'Talk it through with a calm companion.', route: '/chat', icon: '💬' },
@@ -18,112 +25,76 @@ const ALL_MODULES = [
   { id: 'scribble_pad', name: 'Scribble Pad', description: 'Express freely.', route: '/scribble', icon: '✏️' },
   { id: 'healing_garden', name: 'Healing Garden', description: 'Grow your streak.', route: '/healing-garden', icon: '🌿' },
   { id: 'inner_compass', name: 'Inner Compass', description: 'Find your direction.', route: '/inner-compass', icon: '🧭' },
-];
+];"""
 
-function SpaceMark({ identity, compact }: { identity: string; compact?: boolean }) {
-  const size = compact ? 'h-10 w-10' : 'h-14 w-14';
-  switch (identity) {
-    case 'mandala':
-      return (
-        <svg viewBox="0 0 64 64" className={cn(size, 'opacity-80')} aria-hidden="true">
-          <circle cx="32" cy="32" r="22" fill="none" stroke="currentColor" strokeWidth="1.2" />
-          <circle cx="32" cy="32" r="12" fill="none" stroke="currentColor" strokeWidth="1.2" />
-          <circle cx="32" cy="32" r="3" fill="currentColor" />
-          {[0, 45, 90, 135].map((deg) => (
-            <line
-              key={deg}
-              x1="32"
-              y1="10"
-              x2="32"
-              y2="18"
-              stroke="currentColor"
-              strokeWidth="1.2"
-              transform={`rotate(${deg} 32 32)`}
+# Replace SpaceItem and SPACE_ITEMS with ALL_MODULES
+import re
+content = re.sub(r'type SpaceItem = \{.*?\};\n\nconst SPACE_ITEMS: SpaceItem\[\] = \[.*?\];', all_modules, content, flags=re.DOTALL)
+
+# Add state hook inside HomeYourSpace
+content = content.replace(
+    "export function HomeYourSpace({ className }: { className?: string }) {",
+    "export function HomeYourSpace({ className }: { className?: string }) {\n  const INITIAL_SHOW = 6;\n  const [showAll, setShowAll] = useState(false);\n  const visibleModules = showAll ? ALL_MODULES : ALL_MODULES.slice(0, INITIAL_SHOW);\n"
+)
+
+# Replace the grid content
+old_grid = """      <div
+        className={cn(
+          'flex gap-3 overflow-x-auto pb-2 -mx-4 pl-4 pr-6 snap-x snap-mandatory',
+          '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+          'md:mx-0 md:px-0 md:pr-0 md:overflow-visible md:pb-0 md:snap-none',
+          'md:grid md:grid-cols-3 lg:grid-cols-6 md:gap-3.5 lg:gap-4',
+        )}
+      >
+        {SPACE_ITEMS.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              'group relative overflow-hidden rounded-zen-xl',
+              'bg-zen-surface border border-zen-border-soft/60',
+              'transition-colors duration-zen-fast ease-zen-out',
+              'active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-zen-primary focus-visible:outline-offset-2',
+              // Mobile rail — ~2.5 cards visible on 390–430
+              'shrink-0 w-[8.25rem] snap-start p-3.5 min-h-[8.5rem]',
+              // Desktop — wider cards with room for descriptions
+              'md:w-auto md:min-h-[11.5rem] md:p-5 md:shrink',
+            )}
+          >
+            <div
+              className={cn(
+                'absolute -right-2 -bottom-3 h-16 w-16 rounded-full bg-gradient-to-tl to-transparent opacity-95 md:h-20 md:w-20 md:-right-3 md:-bottom-4',
+                item.glowClass,
+              )}
+              aria-hidden="true"
             />
-          ))}
-        </svg>
-      );
-    case 'seviyan':
-      return (
-        <svg viewBox="0 0 64 56" className={cn(compact ? 'h-9 w-10' : 'h-11 w-12', 'opacity-80')} aria-hidden="true">
-          <path
-            d="M10 14h36a8 8 0 0 1 8 8v12a8 8 0 0 1-8 8H28l-10 10v-10H10a8 8 0 0 1-8-8V22a8 8 0 0 1 8-8z"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinejoin="round"
-          />
-          <circle cx="22" cy="28" r="2.2" fill="currentColor" />
-          <circle cx="32" cy="28" r="2.2" fill="currentColor" />
-          <circle cx="42" cy="28" r="2.2" fill="currentColor" />
-        </svg>
-      );
-    case 'burst':
-      return (
-        <svg viewBox="0 0 64 64" className={cn(size, 'opacity-80')} aria-hidden="true">
-          {[0, 40, 80, 120, 160, 200, 240, 280, 320].map((deg) => (
-            <line
-              key={deg}
-              x1="32"
-              y1="32"
-              x2="32"
-              y2="10"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              transform={`rotate(${deg} 32 32)`}
-            />
-          ))}
-        </svg>
-      );
-    case 'breathe':
-      return (
-        <svg viewBox="0 0 64 64" className={cn(size, 'opacity-80')} aria-hidden="true">
-          <circle cx="32" cy="32" r="8" fill="currentColor" opacity="0.35" />
-          <circle cx="32" cy="32" r="16" fill="none" stroke="currentColor" strokeWidth="1.5" />
-          <circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-        </svg>
-      );
-    case 'meditate':
-      return (
-        <svg viewBox="0 0 64 64" className={cn(size, 'opacity-80')} aria-hidden="true">
-          <ellipse cx="32" cy="38" rx="14" ry="8" fill="none" stroke="currentColor" strokeWidth="1.4" />
-          <path
-            d="M32 14 C28 22, 22 26, 32 34 C42 26, 36 22, 32 14 Z"
-            fill="currentColor"
-            opacity="0.55"
-          />
-        </svg>
-      );
-    case 'compass':
-      return (
-        <svg viewBox="0 0 64 64" className={cn(size, 'opacity-80')} aria-hidden="true">
-          <circle cx="32" cy="32" r="20" fill="none" stroke="currentColor" strokeWidth="1.4" />
-          <path d="M32 16 L38 32 L32 48 L26 32 Z" fill="currentColor" opacity="0.55" />
-        </svg>
-      );
-    default:
-      return null;
-  }
-}
+            <div className="relative z-10 flex h-full flex-col">
+              <h3 className="font-ui text-[0.8125rem] font-semibold text-zen-fg tracking-tight leading-snug md:text-[1.0625rem]">
+                {item.title}
+              </h3>
+              <p className="hidden md:block font-ui text-[0.875rem] text-zen-fg-muted mt-2 leading-snug line-clamp-2">
+                {item.description}
+              </p>
+              <div className={cn('mt-auto pt-4 flex items-end justify-between', item.accentClass)}>
+                <span
+                  className={cn(
+                    'inline-flex h-7 w-7 items-center justify-center rounded-full',
+                    'bg-zen-bg-subtle/90 text-zen-fg-muted text-xs',
+                    'group-hover:bg-zen-fg group-hover:text-white',
+                    'transition-colors duration-zen-fast',
+                  )}
+                  aria-hidden="true"
+                >
+                  →
+                </span>
+                <SpaceMark identity={item.identity} compact />
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>"""
 
-export function HomeYourSpace({ className }: { className?: string }) {
-  const INITIAL_SHOW = 6;
-  const [showAll, setShowAll] = useState(false);
-  const visibleModules = showAll ? ALL_MODULES : ALL_MODULES.slice(0, INITIAL_SHOW);
-
-  return (
-    <section className={cn('zen-home-section', className)} aria-labelledby="home-space-heading">
-      <div className="flex items-baseline justify-between gap-3 mb-4 md:mb-6">
-        <h2
-          id="home-space-heading"
-          className="font-ui text-[0.9375rem] font-semibold text-zen-fg md:text-[1.25rem]"
-        >
-          Your wellness space
-        </h2>
-      </div>
-
-      <div
+new_grid = """      <div
         className={cn(
           'flex gap-3 overflow-x-auto pb-2 -mx-4 pl-4 pr-6 snap-x snap-mandatory',
           '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
@@ -222,7 +193,11 @@ export function HomeYourSpace({ className }: { className?: string }) {
             Show less
           </button>
         </div>
-      )}
-    </section>
-  );
-}
+      )}"""
+
+content = content.replace(old_grid, new_grid)
+
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write(content)
+
+print("Applied changes to HomeYourSpace.tsx")
