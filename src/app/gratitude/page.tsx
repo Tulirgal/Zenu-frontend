@@ -14,6 +14,8 @@ import {
   ZenBackLink,
   ZenSkeleton,
 } from '@/components/zen';
+import ModulePage from '@/components/ui/ModulePage';
+import { getTheme } from '@/lib/moduleThemes';
 import { cn } from '@/lib/utils';
 import { GratitudeHeader } from './components/GratitudeHeader';
 import { GratitudeJar, type GratitudeJarHandle, type JarPhase } from './components/GratitudeJar';
@@ -33,6 +35,7 @@ function GratitudePageInner() {
   const { user } = useAuth();
   const jarRef = useRef<GratitudeJarHandle>(null);
   const dialogPanelRef = useRef<HTMLDivElement>(null);
+  const theme = getTheme('gratitude');
 
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<GratitudeEntry[]>([]);
@@ -283,96 +286,100 @@ function GratitudePageInner() {
   const hasEntries = entries.length > 0;
 
   return (
-    <ZenPage
-      atmosphere="home"
+    <ModulePage
+      theme={theme}
       className={cn(
-        'relative min-h-dvh overflow-x-hidden',
-        'bg-[hsl(38,40%,99%)]',
-        'pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-12',
-        'pt-5 md:pt-8',
+        'relative flex w-full flex-col overflow-x-hidden',
+        'max-md:absolute max-md:inset-0 max-md:overflow-y-auto',
+        'md:h-full md:min-h-0 md:flex-1',
+        'max-md:pb-[calc(5.5rem+env(safe-area-inset-bottom,0px)+1rem)]',
+        'md:pb-10',
       )}
     >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse 900px 480px at 12% 0%, hsl(32 55% 78% / 0.22), transparent 58%), radial-gradient(ellipse 720px 420px at 92% 18%, hsl(28 45% 88% / 0.35), transparent 55%), radial-gradient(ellipse 600px 360px at 50% 100%, hsl(40 40% 92% / 0.4), transparent 60%)',
-          }}
-        />
+      <div
+        className={cn(
+          'sticky top-0 z-40 px-4 pt-3 pb-2 sm:px-6',
+          'supports-[backdrop-filter]:backdrop-blur-md',
+        )}
+        style={{
+          background:
+            'linear-gradient(180deg, rgba(26,10,0,0.92) 0%, rgba(61,31,0,0.78) 70%, rgba(61,31,0,0) 100%)',
+        }}
+      >
+        <div className="mx-auto max-w-3xl">
+          <ZenBackLink section="Gratitude" />
+        </div>
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-[720px] flex-col items-center px-4 sm:px-6 lg:px-8">
-        <div className="w-full">
-          <ZenBackLink section="Gratitude" className="mb-2" />
+      <ZenPage atmosphere="none" className="relative w-full">
+        <div className="relative z-10 mx-auto flex w-full max-w-[820px] flex-col items-center px-4 sm:px-6 lg:px-8 pb-8 md:pb-10">
+          <GratitudeHeader
+            className="mt-4 w-full"
+            greetingName={greetingName}
+            onAdd={() => setComposerOpen(true)}
+            onPick={() => void handlePickMemory()}
+            picking={picking || Boolean(retrieve)}
+            canPick={hasEntries && !loading && !deposit && !retrieve}
+          />
+
+          <section className="mt-8 flex w-full flex-row items-end justify-center gap-6 md:mt-12">
+            {loading ? (
+              <ZenSkeleton className="h-72 w-[220px]" rounded="2xl" />
+            ) : (
+              <GratitudeJar
+                ref={jarRef}
+                entryCount={entries.length}
+                active={jarPhase !== 'idle' || Boolean(revealed)}
+                phase={jarPhase}
+              />
+            )}
+
+            <GratitudeCompanion
+              key={whisperPulse}
+              whisper={companionWhisper}
+              visible={!loading}
+              emotion={pandaEmotion}
+              animation={pandaAnimation}
+              stage={companionStage}
+            >
+              {revealed ? (
+                <MemoryReveal
+                  entry={revealed}
+                  whisper={whisperLine}
+                  onClose={closeReveal}
+                  onDelete={() => void handleDeleteRevealed()}
+                />
+              ) : null}
+            </GratitudeCompanion>
+          </section>
         </div>
 
-        <GratitudeHeader
-          className="mt-4 w-full"
-          greetingName={greetingName}
-          onAdd={() => setComposerOpen(true)}
-          onPick={() => void handlePickMemory()}
-          picking={picking || Boolean(retrieve)}
-          canPick={hasEntries && !loading && !deposit && !retrieve}
+        <AddGratitudeDialog
+          ref={dialogPanelRef}
+          open={composerOpen}
+          onOpenChange={setComposerOpen}
+          onSubmit={handleCreateEntry}
+          submitting={submitting}
         />
 
-        <section className="mt-8 flex w-full flex-col items-center md:mt-10">
-          {loading ? (
-            <ZenSkeleton className="h-72 w-full max-w-[220px]" rounded="2xl" />
-          ) : (
-            <GratitudeJar
-              ref={jarRef}
-              entryCount={entries.length}
-              active={jarPhase !== 'idle' || Boolean(revealed)}
-              phase={jarPhase}
-            />
-          )}
-        </section>
-      </div>
-
-      <GratitudeCompanion
-        key={whisperPulse}
-        whisper={companionWhisper}
-        visible={!loading}
-        emotion={pandaEmotion}
-        animation={pandaAnimation}
-        stage={companionStage}
-      >
-        {revealed ? (
-          <MemoryReveal
-            entry={revealed}
-            whisper={whisperLine}
-            onClose={closeReveal}
-            onDelete={() => void handleDeleteRevealed()}
+        {deposit ? (
+          <DepositRitual
+            source={deposit.source}
+            mouth={deposit.mouth}
+            preview={deposit.preview}
+            onComplete={finishDeposit}
           />
         ) : null}
-      </GratitudeCompanion>
 
-      <AddGratitudeDialog
-        ref={dialogPanelRef}
-        open={composerOpen}
-        onOpenChange={setComposerOpen}
-        onSubmit={handleCreateEntry}
-        submitting={submitting}
-      />
-
-      {deposit ? (
-        <DepositRitual
-          source={deposit.source}
-          mouth={deposit.mouth}
-          preview={deposit.preview}
-          onComplete={finishDeposit}
-        />
-      ) : null}
-
-      {retrieve ? (
-        <RetrieveRitual
-          mouth={retrieve.mouth}
-          onReadyToReveal={onRetrieveReady}
-          onComplete={finishRetrieve}
-        />
-      ) : null}
-    </ZenPage>
+        {retrieve ? (
+          <RetrieveRitual
+            mouth={retrieve.mouth}
+            onReadyToReveal={onRetrieveReady}
+            onComplete={finishRetrieve}
+          />
+        ) : null}
+      </ZenPage>
+    </ModulePage>
   );
 }
 

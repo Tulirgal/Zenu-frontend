@@ -21,19 +21,19 @@ export function GratitudeHeader({
   return (
     <header className={cn('relative text-center', className)}>
       <div className="min-w-0">
-        <p className="font-ui text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-[hsl(28_55%_42%)] md:text-[0.75rem]">
+        <p className="font-ui text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-amber-300 md:text-[0.75rem]">
           Hello {greetingName}
         </p>
         <h1
           className={cn(
-            'mt-2 font-display font-medium text-zen-fg',
+            'mt-2 font-display font-medium text-white',
             'text-[1.75rem] leading-[1.15] tracking-[-0.02em]',
             'sm:text-[2.25rem] md:text-[2.75rem]',
           )}
         >
           Moments worth keeping.
         </h1>
-        <p className="mx-auto mt-2 max-w-md font-ui text-[0.9375rem] leading-relaxed text-zen-fg-muted md:text-[1.0625rem]">
+        <p className="mx-auto mt-2 max-w-md font-ui text-[0.9375rem] leading-relaxed text-amber-100/80 md:text-[1.0625rem]">
           Save a note. Ask Panda to choose one when you need it.
         </p>
 
@@ -51,7 +51,7 @@ export function GratitudeHeader({
             type="button"
             variant="ghost"
             size="lg"
-            className="min-h-12"
+            className="min-h-12 text-white hover:bg-white/10"
             onClick={onPick}
             loading={picking}
             disabled={!canPick || picking}

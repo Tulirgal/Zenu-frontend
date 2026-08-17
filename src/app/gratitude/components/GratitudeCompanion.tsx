@@ -66,14 +66,14 @@ export function GratitudeCompanion({
 
   return (
     <div
-      className={cn('zenu-panda-companion z-[45] flex flex-col items-end gap-2', className)}
+      className={cn('relative z-[45] flex flex-col items-center gap-2', className)}
       aria-live="polite"
     >
       <AnimatePresence>
         {children ? (
           <motion.div
             key="offer-card"
-            className="pointer-events-auto w-[min(calc(100vw-1.5rem),22rem)] origin-bottom-right"
+            className="pointer-events-auto absolute bottom-full mb-4 w-[min(calc(100vw-1.5rem),22rem)] origin-bottom"
             initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.94 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.96 }}
