@@ -97,13 +97,13 @@ export function GratitudeCompanion({
             : { type: 'spring', stiffness: 220, damping: 22, mass: 0.85 }
         }
       >
-        <div className="zenu-panda-companion__stage">
+        <div>
           <Panda
             emotion={emotion}
             activity={stage === 'offer' ? 'gratitude' : null}
             animation={animation}
             mode="responsive"
-            size={200}
+            size={180}
             label="Panda companion"
           />
         </div>
