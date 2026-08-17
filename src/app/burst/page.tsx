@@ -144,7 +144,7 @@ export default function BurstItOutPage() {
             <AnimatePresence>
               {phase === 'affirming' ? (
                 <motion.div
-                  className="mb-6 flex max-w-lg flex-col items-center px-2 text-center"
+                  className="mt-8 mb-12 flex max-w-lg flex-col items-center px-2 text-center md:mt-12 md:mb-16"
                   initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0 }}
