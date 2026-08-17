@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ALL_MODULES = [
@@ -109,8 +109,7 @@ function SpaceMark({ identity, compact }: { identity: string; compact?: boolean 
 
 export function HomeYourSpace({ className }: { className?: string }) {
   const INITIAL_SHOW = 6;
-  const [showAll, setShowAll] = useState(false);
-  const visibleModules = showAll ? ALL_MODULES : ALL_MODULES.slice(0, INITIAL_SHOW);
+  const visibleModules = ALL_MODULES.slice(0, INITIAL_SHOW);
 
   return (
     <section className={cn('zen-home-section', className)} aria-labelledby="home-space-heading">
@@ -193,36 +192,21 @@ export function HomeYourSpace({ className }: { className?: string }) {
         </AnimatePresence>
       </div>
 
-      {!showAll && ALL_MODULES.length > INITIAL_SHOW && (
-        <div className="flex justify-center mt-4 md:mt-6">
-          <motion.button
-            onClick={() => setShowAll(true)}
-            className={cn(
-              'inline-flex items-center gap-2',
-              'font-ui text-[0.875rem] text-zen-fg-muted hover:text-zen-fg',
-              'px-5 py-2.5 rounded-zen-xl',
-              'border border-zen-border-soft/55 bg-zen-surface',
-              'hover:bg-zen-surface-raised transition-all duration-150',
-            )}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Show {ALL_MODULES.length - INITIAL_SHOW} more modules
-            <ChevronDown className="h-4 w-4" aria-hidden="true" />
-          </motion.button>
-        </div>
-      )}
-
-      {showAll && (
-        <div className="flex justify-center mt-4 md:mt-6">
-          <button
-            onClick={() => setShowAll(false)}
-            className="font-ui text-[0.8125rem] text-zen-fg-subtle hover:text-zen-fg transition-colors underline"
-          >
-            Show less
-          </button>
-        </div>
-      )}
+      <div className="flex justify-center mt-4 md:mt-6">
+        <Link
+          href="/wellness"
+          className={cn(
+            'inline-flex items-center gap-2',
+            'font-ui text-[0.875rem] text-zen-fg-muted hover:text-zen-fg',
+            'px-5 py-2.5 rounded-zen-xl',
+            'border border-zen-border-soft/55 bg-zen-surface',
+            'hover:bg-zen-surface-raised transition-all duration-150',
+          )}
+        >
+          Explore all modules
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
+      </div>
     </section>
   );
 }
