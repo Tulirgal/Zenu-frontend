@@ -170,7 +170,7 @@ export function HomeYourSpace({ className }: { className?: string }) {
                     <h3 className="font-ui text-[0.8125rem] font-semibold text-zen-fg tracking-tight leading-snug md:text-[1.0625rem]">
                       {module.name}
                     </h3>
-                    <p className="hidden md:block font-ui text-[0.875rem] text-zen-fg-muted mt-2 leading-snug line-clamp-2">
+                    <p className="font-ui text-[0.75rem] md:text-[0.875rem] text-zen-fg-muted mt-1 md:mt-2 leading-snug line-clamp-2">
                       {module.description}
                     </p>
                     <div className={cn('mt-auto pt-4 flex items-end justify-between', accentClass)}>
