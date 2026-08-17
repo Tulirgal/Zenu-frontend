@@ -8,16 +8,16 @@ import { cn } from '@/lib/utils';
 
 const ALL_MODULES = [
   { id: 'breathing', name: 'Zen Breath Zone', description: 'A gentle rhythm for your nervous system.', route: '/breathing', icon: '🌬️' },
-  { id: 'mindfulness', name: 'Meditate', description: 'Stillness in a few quiet minutes.', route: '/mindfulness', icon: '🧘' },
+  { id: 'mindfulness', name: 'Meditate', description: 'Stillness in a few quiet minutes.', route: '/meditation', icon: '🧘' },
   { id: 'chatbot_seviyan', name: 'Seviyan', description: 'Talk it through with a calm companion.', route: '/chat', icon: '💬' },
-  { id: 'diary', name: 'My Diary', description: 'Reflect on your day.', route: '/diary', icon: '📖' },
+  { id: 'diary', name: 'My Diary', description: 'Reflect on your day.', route: '/journal', icon: '📖' },
   { id: 'journal_gratitude', name: 'Gratitude Journal', description: 'Count your blessings.', route: '/gratitude', icon: '🌸' },
-  { id: 'doodle_dreams', name: 'Doodle Dreams Studio', description: 'Soft patterns when words feel heavy.', route: '/doodle', icon: '🎨' },
-  { id: 'bubble_canvas', name: 'Bubble Canvas', description: 'Pop stress away.', route: '/bubble', icon: '🫧' },
+  { id: 'doodle_dreams', name: 'Doodle Dreams Studio', description: 'Soft patterns when words feel heavy.', route: '/art', icon: '🎨' },
+  { id: 'bubble_canvas', name: 'Bubble Canvas', description: 'Pop stress away.', route: '/bubbles', icon: '🫧' },
   { id: 'burst_it_out', name: 'Burst It Out', description: 'A short release when energy builds.', route: '/burst', icon: '💥' },
   { id: 'scribble_pad', name: 'Scribble Pad', description: 'Express freely.', route: '/scribble', icon: '✏️' },
   { id: 'healing_garden', name: 'Healing Garden', description: 'Grow your streak.', route: '/healing-garden', icon: '🌿' },
-  { id: 'inner_compass', name: 'Inner Compass', description: 'Find your direction.', route: '/inner-compass', icon: '🧭' },
+  { id: 'inner_compass', name: 'Inner Compass', description: 'Find your direction.', route: '/innercompass', icon: '🧭' },
 ];
 
 function SpaceMark({ identity, compact }: { identity: string; compact?: boolean }) {
