@@ -29,9 +29,7 @@ export const GratitudeJar = forwardRef<
 ) {
   const reducedMotion = usePrefersReducedMotion();
   const mouthRef = useRef<HTMLSpanElement>(null);
-  const fill = Math.min(1, entryCount / 12);
-  const fillHeight = 28 + fill * 95;
-  const paperCount = Math.min(8, entryCount);
+  const paperCount = Math.min(12, entryCount);
 
   const busy = phase === 'absorb' || phase === 'resonate' || active;
   const lidY = busy && !reducedMotion ? -18 : 0;
@@ -85,28 +83,76 @@ export const GratitudeJar = forwardRef<
           data-jar-mouth
           aria-hidden="true"
         />
-
         <svg
           viewBox="0 0 220 280"
-          className="relative z-[1] h-auto w-full drop-shadow-[0_18px_40px_rgba(80,50,20,0.12)]"
+          className="relative z-[1] h-auto w-full drop-shadow-[0_12px_24px_rgba(240,150,50,0.15)]"
           role="img"
           aria-label={`Gratitude jar with ${entryCount} moments`}
         >
           <defs>
-            <linearGradient id="jarGlass" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="hsl(40 40% 98% / 0.55)" />
-              <stop offset="45%" stopColor="hsl(35 30% 92% / 0.28)" />
-              <stop offset="100%" stopColor="hsl(28 25% 86% / 0.4)" />
-            </linearGradient>
-            <linearGradient id="jarFill" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stopColor="hsl(32 55% 78% / 0.85)" />
-              <stop offset="100%" stopColor="hsl(38 60% 88% / 0.55)" />
-            </linearGradient>
             <clipPath id="jarClip">
-              <path d="M58 78 C58 78 52 118 52 160 C52 210 68 248 110 248 C152 248 168 210 168 160 C168 118 162 78 162 78 Z" />
+              <path d="M50 85 L170 85 L170 210 Q170 240 140 240 L80 240 Q50 240 50 210 Z" />
             </clipPath>
+            <g id="sakura">
+              <circle cx="0" cy="0" r="14" fill="#fffbeb" stroke="#fcd34d" strokeWidth="1.5" />
+              <circle cx="0" cy="-5" r="4" fill="#f472b6" />
+              <circle cx="4.7" cy="-1.5" r="4" fill="#f472b6" />
+              <circle cx="2.9" cy="4" r="4" fill="#f472b6" />
+              <circle cx="-2.9" cy="4" r="4" fill="#f472b6" />
+              <circle cx="-4.7" cy="-1.5" r="4" fill="#f472b6" />
+              <circle cx="0" cy="0" r="2" fill="#fdf2f8" />
+            </g>
           </defs>
 
+          {/* Jar Neck */}
+          <rect x="50" y="70" width="120" height="15" fill="#fde047" />
+
+          {/* Jar Body Fill & Outline */}
+          <path
+            d="M50 85 L170 85 L170 210 Q170 240 140 240 L80 240 Q50 240 50 210 Z"
+            fill="#fef08a"
+            stroke="#eab308"
+            strokeWidth="4"
+          />
+
+          {/* Glass Highlight */}
+          <rect x="60" y="100" width="8" height="90" rx="4" fill="#ffffff" opacity="0.6" />
+
+          {/* Inside Jar (Clipped) */}
+          <g clipPath="url(#jarClip)">
+            {Array.from({ length: paperCount }).map((_, i) => {
+              const x = 75 + (i % 3) * 35 + (i % 2) * 10;
+              const y = 215 - Math.floor(i / 3) * 28 - (i % 2) * 8;
+              const rot = ((i * 37) % 60) - 30;
+              return (
+                <motion.use
+                  key={i}
+                  href="#sakura"
+                  x={x}
+                  y={y}
+                  animate={
+                    busy && !reducedMotion
+                      ? { y: [y, y - 6, y], rotate: [rot, rot + 15, rot] }
+                      : { y, rotate: rot }
+                  }
+                  transition={
+                    reducedMotion
+                      ? { duration: 0 }
+                      : {
+                          duration: 1.8,
+                          delay: i * 0.08,
+                          repeat: busy ? Infinity : 0,
+                          repeatType: 'mirror',
+                          ease: 'easeInOut',
+                        }
+                  }
+                  style={{ transformOrigin: `${x}px ${y}px` }}
+                />
+              );
+            })}
+          </g>
+
+          {/* Lid container (animated) */}
           <motion.g
             animate={{ y: lidY, rotate: lidRotate }}
             transition={
@@ -116,93 +162,37 @@ export const GratitudeJar = forwardRef<
             }
             style={{ transformOrigin: '110px 62px' }}
           >
-            <ellipse cx="110" cy="58" rx="48" ry="10" fill="hsl(28 35% 72%)" />
-            <rect x="68" y="48" width="84" height="14" rx="4" fill="hsl(28 40% 68%)" />
-            <ellipse cx="110" cy="48" rx="42" ry="8" fill="hsl(32 45% 78%)" />
+            {/* Knob */}
+            <rect x="85" y="20" width="50" height="20" rx="8" fill="#a855f7" />
+            {/* Main Lid */}
+            <rect x="40" y="35" width="140" height="35" rx="8" fill="#a855f7" />
+            {/* Lid Highlight */}
+            <rect x="50" y="42" width="30" height="6" rx="3" fill="#d8b4fe" opacity="0.5" />
+            
+            {/* Heart */}
+            <path
+              d="M 110 62 C 110 62 100 54 100 48 C 100 43 106 43 110 47 C 114 43 120 43 120 48 C 120 54 110 62 110 62 Z"
+              fill="#ef4444"
+            />
           </motion.g>
 
-          <path
-            d="M78 68 L78 78 L142 78 L142 68 Z"
-            fill="hsl(40 30% 94% / 0.5)"
-            stroke="hsl(28 25% 70% / 0.5)"
-            strokeWidth="1.5"
-          />
-
-          <path
-            d="M58 78 C58 78 52 118 52 160 C52 210 68 248 110 248 C152 248 168 210 168 160 C168 118 162 78 162 78 Z"
-            fill="url(#jarGlass)"
-            stroke="hsl(28 30% 65% / 0.55)"
-            strokeWidth="2"
-          />
-
-          <g clipPath="url(#jarClip)">
-            <motion.rect
-              x="52"
-              width="116"
-              animate={{ y: 248 - fillHeight, height: fillHeight }}
+          {/* Notification Badge */}
+          {entryCount > 0 && (
+            <motion.g 
+              transform="translate(170, 35)"
               initial={false}
-              transition={
-                reducedMotion
-                  ? { duration: 0.15 }
-                  : { type: 'spring', stiffness: 140, damping: 24 }
-              }
-              fill="url(#jarFill)"
-            />
-            {Array.from({ length: paperCount }).map((_, i) => {
-              const x = 70 + (i % 4) * 18 + (i % 2) * 4;
-              const y = 230 - Math.floor(i / 4) * 22 - (i % 3) * 6;
-              const rot = ((i * 17) % 40) - 20;
-              const hue = 28 + (i % 5) * 8;
-              return (
-                <motion.rect
-                  key={i}
-                  x={x}
-                  y={y}
-                  width={22}
-                  height={14}
-                  rx={2}
-                  fill={`hsl(${hue} 55% ${88 - (i % 3) * 4}%)`}
-                  stroke={`hsl(${hue} 35% 70% / 0.4)`}
-                  strokeWidth={0.8}
-                  animate={
-                    busy && !reducedMotion
-                      ? { y: [y, y - 4, y], rotate: [rot, rot + 3, rot] }
-                      : { y, rotate: rot }
-                  }
-                  transition={
-                    reducedMotion
-                      ? { duration: 0 }
-                      : {
-                          duration: 1.4,
-                          delay: i * 0.04,
-                          repeat: busy ? Infinity : 0,
-                          repeatType: 'mirror',
-                          ease: 'easeInOut',
-                        }
-                  }
-                  style={{ transformOrigin: `${x + 11}px ${y + 7}px` }}
-                />
-              );
-            })}
-          </g>
-
-          <path
-            d="M70 100 C68 140 70 190 78 220"
-            fill="none"
-            stroke="hsl(0 0% 100% / 0.35)"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 0.3 }}
+              key={entryCount} // Triggers animation on count change
+            >
+              <circle cx="0" cy="0" r="16" fill="#fb7185" />
+              <text x="0" y="5" fill="#ffffff" fontSize="14" fontWeight="bold" fontFamily="ui-sans-serif, system-ui, sans-serif" textAnchor="middle">
+                {entryCount > 99 ? '99+' : entryCount}
+              </text>
+            </motion.g>
+          )}
         </svg>
       </div>
-
-      <p className="mt-4 font-ui text-xs text-white/60">
-        {entryCount === 0
-          ? 'Empty for now'
-          : entryCount === 1
-            ? '1 moment kept'
-            : `${entryCount} moments kept`}
-      </p>
     </motion.div>
   );
 });

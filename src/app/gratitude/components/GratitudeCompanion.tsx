@@ -103,7 +103,7 @@ export function GratitudeCompanion({
             activity={stage === 'offer' ? 'gratitude' : null}
             animation={animation}
             mode="responsive"
-            size={120}
+            size={200}
             label="Panda companion"
           />
         </div>
