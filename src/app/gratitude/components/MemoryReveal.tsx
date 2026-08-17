@@ -40,7 +40,7 @@ export function MemoryReveal({
               : { type: 'spring', stiffness: 280, damping: 26 }
           }
           className={cn(
-            'relative w-full overflow-y-auto max-h-[55vh] rounded-zen-xl',
+            'relative w-full overflow-y-auto max-h-[40vh] rounded-zen-xl',
             'border border-[hsl(32_40%_80%/0.6)] bg-[hsl(40_45%_97%)]',
             'px-4 py-4 shadow-[0_20px_48px_-28px_rgba(80,50,20,0.35)]',
             className,

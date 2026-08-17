@@ -322,7 +322,7 @@ function GratitudePageInner() {
             canPick={hasEntries && !loading && !deposit && !retrieve}
           />
 
-          <section className="mt-32 flex w-full flex-row items-end justify-center gap-6 md:mt-48">
+          <section className="mt-48 flex w-full flex-row items-end justify-center gap-6 md:mt-64">
             <GratitudeCompanion
               key={whisperPulse}
               whisper={companionWhisper}
