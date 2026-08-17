@@ -14,20 +14,20 @@ export function BreathingHeader({ className }: { className?: string }) {
         <div className="min-w-0 text-center md:text-left">
           <h1
             className={cn(
-              'font-display font-medium text-zen-fg',
+              'font-display font-medium',
               'text-[1.875rem] leading-[1.15] tracking-[-0.02em]',
               'sm:text-[2.5rem] md:text-[3rem] lg:text-[3.25rem]',
             )}
           >
             Breathing
           </h1>
-          <p className="mt-3 font-display text-[1.25rem] tracking-[-0.01em] text-zen-fg md:text-[1.5rem]">
+          <p className="mt-3 font-display text-[1.25rem] tracking-[-0.01em] md:text-[1.5rem]">
             Find your rhythm.{' '}
             <span className="text-zen-secondary" aria-hidden="true">
               ♡
             </span>
           </p>
-          <p className="mx-auto mt-3 max-w-xl font-ui text-[0.9375rem] leading-relaxed text-zen-fg-muted md:mx-0 md:text-[1.0625rem]">
+          <p className="mx-auto mt-3 max-w-xl font-ui text-[0.9375rem] leading-relaxed opacity-80 md:mx-0 md:text-[1.0625rem]">
             A few slow breaths can change the way this moment feels.
           </p>
         </div>

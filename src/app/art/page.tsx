@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { trackEngagement } from '@/lib/signals';
 import { cn } from '@/lib/utils';
+import ModulePage from '@/components/ui/ModulePage';
+import { getTheme } from '@/lib/moduleThemes';
 import { DoodleHeader } from './components/DoodleHeader';
 import { DoodleCompanion } from './components/DoodleCompanion';
 import { DesktopToolKit } from './components/DesktopToolKit';
@@ -106,20 +108,17 @@ export default function DoodleDreamsPage() {
     setCompletionOpen(false);
   };
 
+  const theme = getTheme('doodle');
+
   return (
-    <div
+    <ModulePage
+      theme={theme}
       className={cn(
-        'flex flex-col w-full overflow-hidden bg-[hsl(40,35%,99%)]',
         'max-md:absolute max-md:inset-0',
         'max-md:pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))]',
         'md:relative md:h-full md:min-h-0 md:flex-1',
       )}
-      data-zen-atmosphere="home"
     >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute -right-16 top-8 h-56 w-56 rounded-full bg-zen-secondary-soft opacity-45 blur-3xl" />
-        <div className="absolute -left-12 bottom-24 h-48 w-48 rounded-full bg-zen-emotion-surprise-soft opacity-30 blur-3xl" />
-      </div>
 
       <div className="relative z-10 flex flex-1 min-h-0 gap-2 md:gap-3 px-2 pt-3 pb-2 md:px-4 md:pt-4 md:pb-3">
         <DesktopToolKit
@@ -237,6 +236,6 @@ export default function DoodleDreamsPage() {
           </div>
         </div>
       ) : null}
-    </div>
+    </ModulePage>
   );
 }

@@ -5,9 +5,10 @@ import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useAuth } from '@/components/providers/AuthProvider';
 import ZenFocusMode from '@/components/layout/ZenFocusMode';
 import {
-  ZenPage,
   ZenButton,
 } from '@/components/zen';
+import ModulePage from '@/components/ui/ModulePage';
+import { getTheme } from '@/lib/moduleThemes';
 import { apiClient } from '@/lib/apiClient';
 import type { Meditation } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -43,42 +44,30 @@ function MeditationPageInner() {
 
   const session = meditations[0] ?? null;
 
+  const theme = getTheme('mindfulness');
+
   return (
     <ZenFocusMode title="Meditate">
-      <ZenPage
-        atmosphere="home"
-        className={cn(
+      <ModulePage theme={theme}>
+        <div className={cn(
           'relative min-h-dvh overflow-x-hidden',
-          'bg-[hsl(40,35%,99%)]',
           'pt-20 pb-16 md:pt-24 md:pb-20',
-        )}
-      >
-        {/* Subtle lavender/blue atmosphere — not full-page purple */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'radial-gradient(ellipse 900px 480px at 15% 0%, hsl(262 40% 72% / 0.12), transparent 60%), radial-gradient(ellipse 700px 400px at 90% 20%, hsl(210 55% 70% / 0.1), transparent 55%), radial-gradient(ellipse 600px 360px at 50% 100%, hsl(40 40% 92% / 0.5), transparent 50%)',
-            }}
-          />
-        </div>
-
-        <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
+        )}>
+          <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
           <header className="mx-auto max-w-3xl text-center">
             <p className="font-ui text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-zen-secondary md:text-[0.75rem]">
               Guided stillness
             </p>
             <h1
               className={cn(
-                'mt-3 font-display font-medium text-zen-fg',
+                'mt-3 font-display font-medium',
                 'text-[1.875rem] leading-[1.15] tracking-[-0.02em]',
                 'sm:text-[2.5rem] md:text-[3rem] lg:text-[3.25rem]',
               )}
             >
               Find your inner peace
             </h1>
-            <p className="mx-auto mt-4 max-w-xl font-ui text-[0.9375rem] leading-relaxed text-zen-fg-muted md:text-[1.0625rem]">
+            <p className="mx-auto mt-4 max-w-xl font-ui text-[0.9375rem] leading-relaxed opacity-80 md:text-[1.0625rem]">
               A few quiet minutes to slow down and release tension.
             </p>
           </header>
@@ -114,10 +103,10 @@ function MeditationPageInner() {
             <>
               <div className="mt-12 grid gap-10 md:mt-16 md:grid-cols-2 md:gap-12 lg:gap-16">
                 <section className="min-w-0">
-                  <h2 className="font-display text-[1.25rem] leading-tight tracking-[-0.01em] text-zen-fg md:text-[1.5rem]">
+                  <h2 className="font-display text-[1.25rem] leading-tight tracking-[-0.01em] md:text-[1.5rem]">
                     About this practice
                   </h2>
-                  <p className="mt-3 font-ui text-[0.9375rem] leading-relaxed text-zen-fg-muted md:text-[1.0625rem]">
+                  <p className="mt-3 font-ui text-[0.9375rem] leading-relaxed opacity-80 md:text-[1.0625rem]">
                     {session.description?.trim() ||
                       "Jacobson's Progressive Muscle Relaxation guides you through systematically tensing and releasing each muscle group so the body can settle into stillness."}
                   </p>
@@ -131,8 +120,9 @@ function MeditationPageInner() {
               </div>
             </>
           ) : null}
+          </div>
         </div>
-      </ZenPage>
+      </ModulePage>
     </ZenFocusMode>
   );
 }

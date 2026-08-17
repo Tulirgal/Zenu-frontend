@@ -7,8 +7,10 @@ import { RequireAuth } from '@/components/auth/RequireAuth';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { apiClient } from '@/lib/apiClient';
 import type { BreathingPattern } from '@/lib/types';
-import { ZenPage, ZenButton, ZenBackLink } from '@/components/zen';
+import { ZenButton, ZenBackLink } from '@/components/zen';
 import { cn } from '@/lib/utils';
+import ModulePage from '@/components/ui/ModulePage';
+import { getTheme } from '@/lib/moduleThemes';
 import { BreathingHeader } from './components/BreathingHeader';
 import { QuickBreathingSession } from './components/QuickBreathingSession';
 import { BreathingTechniqueGrid } from './components/BreathingTechniqueGrid';
@@ -91,27 +93,16 @@ function BreathingPageInner() {
     }
   };
 
+  const theme = getTheme('breathing');
+
   return (
-    <ZenPage
-      atmosphere="home"
-      className={cn(
+    <ModulePage theme={theme}>
+      <div className={cn(
         'relative min-h-dvh overflow-x-hidden',
-        'bg-[hsl(40,35%,99%)]',
         'pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-16',
         'pt-6 md:pt-10',
-      )}
-    >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse 900px 480px at 12% 0%, hsl(262 40% 72% / 0.12), transparent 60%), radial-gradient(ellipse 700px 400px at 90% 15%, hsl(200 55% 70% / 0.1), transparent 55%)',
-          }}
-        />
-      </div>
-
-      <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
+      )}>
+        <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
         <ZenBackLink section="Breathe" className="mb-4" />
         <BreathingHeader />
 
@@ -147,7 +138,8 @@ function BreathingPageInner() {
           onComplete={handleSessionComplete}
         />
       ) : null}
-    </ZenPage>
+      </div>
+    </ModulePage>
   );
 }
 
