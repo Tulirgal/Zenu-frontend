@@ -323,17 +323,6 @@ function GratitudePageInner() {
           />
 
           <section className="mt-8 flex w-full flex-row items-end justify-center gap-6 md:mt-12">
-            {loading ? (
-              <ZenSkeleton className="h-72 w-[220px]" rounded="2xl" />
-            ) : (
-              <GratitudeJar
-                ref={jarRef}
-                entryCount={entries.length}
-                active={jarPhase !== 'idle' || Boolean(revealed)}
-                phase={jarPhase}
-              />
-            )}
-
             <GratitudeCompanion
               key={whisperPulse}
               whisper={companionWhisper}
@@ -351,6 +340,18 @@ function GratitudePageInner() {
                 />
               ) : null}
             </GratitudeCompanion>
+
+            {loading ? (
+              <ZenSkeleton className="h-72 w-[220px]" rounded="2xl" />
+            ) : (
+              <GratitudeJar
+                ref={jarRef}
+                entryCount={entries.length}
+                active={jarPhase !== 'idle' || Boolean(revealed)}
+                phase={jarPhase}
+                className="mx-0 max-w-[280px]"
+              />
+            )}
           </section>
         </div>
 

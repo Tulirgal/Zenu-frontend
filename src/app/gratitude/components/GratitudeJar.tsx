@@ -88,19 +88,19 @@ export const GratitudeJar = forwardRef<
 
         <svg
           viewBox="0 0 220 280"
-          className="relative z-[1] h-auto w-full drop-shadow-[0_18px_40px_rgba(240,150,50,0.15)]"
+          className="relative z-[1] h-auto w-full drop-shadow-[0_18px_40px_rgba(80,50,20,0.12)]"
           role="img"
           aria-label={`Gratitude jar with ${entryCount} moments`}
         >
           <defs>
             <linearGradient id="jarGlass" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="hsl(40 40% 90% / 0.15)" />
-              <stop offset="45%" stopColor="hsl(35 30% 92% / 0.05)" />
-              <stop offset="100%" stopColor="hsl(28 25% 86% / 0.1)" />
+              <stop offset="0%" stopColor="hsl(40 40% 98% / 0.55)" />
+              <stop offset="45%" stopColor="hsl(35 30% 92% / 0.28)" />
+              <stop offset="100%" stopColor="hsl(28 25% 86% / 0.4)" />
             </linearGradient>
             <linearGradient id="jarFill" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stopColor="hsl(32 85% 60% / 0.75)" />
-              <stop offset="100%" stopColor="hsl(38 90% 70% / 0.45)" />
+              <stop offset="0%" stopColor="hsl(32 55% 78% / 0.85)" />
+              <stop offset="100%" stopColor="hsl(38 60% 88% / 0.55)" />
             </linearGradient>
             <clipPath id="jarClip">
               <path d="M58 78 C58 78 52 118 52 160 C52 210 68 248 110 248 C152 248 168 210 168 160 C168 118 162 78 162 78 Z" />
@@ -116,22 +116,22 @@ export const GratitudeJar = forwardRef<
             }
             style={{ transformOrigin: '110px 62px' }}
           >
-            <ellipse cx="110" cy="58" rx="48" ry="10" fill="hsl(28 35% 42%)" />
-            <rect x="68" y="48" width="84" height="14" rx="4" fill="hsl(28 40% 38%)" />
-            <ellipse cx="110" cy="48" rx="42" ry="8" fill="hsl(32 45% 48%)" />
+            <ellipse cx="110" cy="58" rx="48" ry="10" fill="hsl(28 35% 72%)" />
+            <rect x="68" y="48" width="84" height="14" rx="4" fill="hsl(28 40% 68%)" />
+            <ellipse cx="110" cy="48" rx="42" ry="8" fill="hsl(32 45% 78%)" />
           </motion.g>
 
           <path
             d="M78 68 L78 78 L142 78 L142 68 Z"
-            fill="hsl(40 30% 94% / 0.1)"
-            stroke="hsl(28 25% 70% / 0.2)"
+            fill="hsl(40 30% 94% / 0.5)"
+            stroke="hsl(28 25% 70% / 0.5)"
             strokeWidth="1.5"
           />
 
           <path
             d="M58 78 C58 78 52 118 52 160 C52 210 68 248 110 248 C152 248 168 210 168 160 C168 118 162 78 162 78 Z"
             fill="url(#jarGlass)"
-            stroke="hsl(28 30% 65% / 0.35)"
+            stroke="hsl(28 30% 65% / 0.55)"
             strokeWidth="2"
           />
 
@@ -189,7 +189,7 @@ export const GratitudeJar = forwardRef<
           <path
             d="M70 100 C68 140 70 190 78 220"
             fill="none"
-            stroke="hsl(0 0% 100% / 0.15)"
+            stroke="hsl(0 0% 100% / 0.35)"
             strokeWidth="3"
             strokeLinecap="round"
           />
